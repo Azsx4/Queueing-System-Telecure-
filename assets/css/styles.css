@@ -1,0 +1,53 @@
+body{
+background:#edf4fa;
+font-family:Segoe UI;
+}
+
+.ticket-card{
+
+background:white;
+max-width:450px;
+
+margin:30px auto;
+
+padding:30px;
+
+border-radius:20px;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.1);
+
+}
+
+.label{
+
+letter-spacing:2px;
+font-size:14px;
+color:#777;
+
+}
+
+.queue-number{
+
+font-size:110px;
+font-weight:700;
+line-height:1;
+
+color:#00122e;
+
+}
+
+
+
+
+
+@page{
+size:58mm auto;
+margin:0;
+}
+
+@page{
+size:80mm auto;
+margin:0;
+}
+
