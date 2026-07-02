@@ -3,7 +3,7 @@
 $host = "localhost";
 $user = "root";
 $password = "";
-$database = "queue_system_ver2.0";
+$database = "queue_system_ver3.0";
 $admin_password = "TeleCureAdmin123";
 
 $conn = new mysqli(

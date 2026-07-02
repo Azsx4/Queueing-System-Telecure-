@@ -1,6 +1,56 @@
 <?php
+
+session_start();
+if (
+    isset($_SESSION['reception_date']) &&
+    $_SESSION['reception_date'] != date('Y-m-d')
+) {
+    session_unset();
+    session_destroy();
+
+    session_start();
+}
+
 include 'database/config.php';
+
+if(isset($_POST['change_reception']))
+{
+    session_destroy();
+
+    header("Location: reception.php");
+    exit;
+}
+
+if (isset($_POST['start_reception'])) {
+
+    $_SESSION['reception_name'] =
+        trim($_POST['reception_name']);
+
+    $_SESSION['active_slots'] =
+        intval($_POST['active_slots']);
+
+    $_SESSION['reception_date'] =
+        date('Y-m-d');
+
+    $_SESSION['reception_start'] =
+        date('Y-m-d H:i:s');
+
+    header("Location: reception.php");
+    exit;
+}
+
 $today = date('Y-m-d');
+
+$activeCount = $conn->query("
+SELECT COUNT(*) total
+FROM queues
+WHERE status='called'
+AND queue_date='$today'
+")->fetch_assoc()['total'];
+
+$activeSlots =
+$_SESSION['active_slots'] ?? 1;
+
 
 $allCount = $conn->query("
 SELECT COUNT(*) total
@@ -40,11 +90,10 @@ AND queue_date='$today'
 $limit = 20;
 
 $page = isset($_GET['page'])
-? (int)$_GET['page']
-: 1;
+    ? (int)$_GET['page']
+    : 1;
 
-if($page < 1)
-{
+if ($page < 1) {
     $page = 1;
 }
 
@@ -58,17 +107,17 @@ WHERE queue_date='$today'
 
 //if($statusFilter != '')
 //{
- //  $countSql .= "
- //   AND status='$statusFilter'
+//  $countSql .= "
+//   AND status='$statusFilter'
 //";
 //}
 
 $totalRows =
-$conn->query($countSql)
-->fetch_assoc()['total'];
+    $conn->query($countSql)
+        ->fetch_assoc()['total'];
 
 $totalPages =
-ceil($totalRows / $limit);
+    ceil($totalRows / $limit);
 
 $waitingCount = $conn->query("
 SELECT COUNT(*) total
@@ -98,6 +147,7 @@ WHERE queue_date = '$today'
 ORDER BY queue_number ASC
 ");
 
+/* Replace by $activeQueues */
 $current = $conn->query("
 SELECT *
 FROM queues
@@ -106,6 +156,29 @@ AND queue_date='$today'
 ORDER BY called_at DESC
 LIMIT 1
 ")->fetch_assoc();
+
+$activeQueues = $conn->query("
+SELECT
+    id,
+    queue_number,
+    called_at,
+    TIMESTAMPDIFF(SECOND, called_at, NOW()) AS waiting_seconds
+FROM queues
+WHERE status='called'
+AND queue_date='$today'
+ORDER BY called_at ASC
+");
+
+$activeCount = $conn->query("
+SELECT COUNT(*) total
+FROM queues
+WHERE status='called'
+AND queue_date='$today'
+")->fetch_assoc()['total'];
+
+$activeSlots =
+$_SESSION['active_slots'] ?? 1;
+
 
 
 $currentQueueNumber = $current ? (int) $current['queue_number'] : 0;
@@ -137,25 +210,7 @@ while ($row = $nextResult->fetch_assoc()) {
     $nextRows[] = $row;
 }
 
-$statusFilter = $_GET['status'] ?? '';
 
-$sql = "
-SELECT *
-FROM queues
-WHERE queue_date = '$today'
-";
-
-if($statusFilter != '')
-{
-    $sql .= " AND status='$statusFilter'";
-}
-
-$sql .= "
-ORDER BY queue_number ASC
-LIMIT $offset, $limit
-";
-
-$queues = $conn->query($sql);
 
 ?>
 
@@ -164,803 +219,809 @@ $queues = $conn->query($sql);
 
 <head>
 
-<link rel="stylesheet" href="assets/css/reception.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/theme.css">
-<link href="assets/css/styles.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-<script
-src="assets/js/theme.js">
-</script>
+    <link rel="stylesheet" href="assets/css/reception.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://jsdelivr.net">
+    <script
+        src="assets/js/theme.js">
+        
+    </script>
 </head>
 
+<style>
+/* ===========================
+   Active Queue Cards
+=========================== */
+
+#activeQueueContainer {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 15px;
+}
+
+.active-queue-card {
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  padding: 20px;
+
+  margin-bottom: 15px;
+
+  border-left: 6px solid #0ea5ff;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.active-queue-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.queue-card-header {
+  border-bottom: 1px solid #ececec;
+
+  padding-bottom: 12px;
+
+  margin-bottom: 15px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.queue-title {
+  color: #0ea5ff;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+}
+
+.queue-card-body {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 1.5rem;
+
+  flex-wrap: wrap;
+}
+
+.queue-number-col {
+  flex: 0 0 auto;
+
+  min-width: 120px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.queue-no {
+  color: #0ea5ff;
+
+  font-size: 4rem;
+
+  font-weight: 800;
+
+  line-height: 1;
+
+  margin: 0;
+}
+
+.queue-info {
+  flex: 1 1 240px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.65rem;
+
+  color: #555;
+}
+
+.queue-info div {
+  display: flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  font-size: 0.95rem;
+}
+
+.queue-info i {
+  color: #0ea5ff;
+}
+
+.queue-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  justify-content: flex-end;
+}
+
+.action-icon {
+  width: 44px;
+
+  height: 44px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  border: none;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  position: relative;
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-icon:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.action-icon.recall {
+  background: #0d6efd;
+}
+
+.action-icon.done {
+  background: #198754;
+}
+
+.action-icon.missing {
+  background: #ffc107;
+
+  color: #000;
+}
+
+.action-icon .action-label {
+  position: absolute;
+
+  bottom: -2.25rem;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  background: rgba(0, 0, 0, 0.85);
+
+  color: #fff;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+
+  white-space: nowrap;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition: opacity 0.16s ease;
+}
+
+.action-icon:hover .action-label {
+  opacity: 1;
+
+  visibility: visible;
+}
+</style>
 <body>
 
-<?php include 'components/sidebar.php'; ?>
-<?php include 'components/header.php'; ?>
-<div class="main-content">
+    <?php
+    if (
+        !isset($_SESSION['reception_name'])
+        ||
+        empty($_SESSION['reception_name'])
+    ): ?>
 
-<div class="row mb-4">
-    <!-- Hero Now Serving -->
+        <div class="container py-5">
 
-    <div class="hero-serving col-md-6" style="position:relative;">
+            <div
+                class="card mx-auto shadow"
+                style="max-width:500px;">
 
-        <div class="hero-label">
-            NOW SERVING
-        </div>
+                <div class="card-body">
 
-        <div class="hero-number" id="nowServingNumber">
+                    <h3 class="mb-4">
+                        Start Reception
+                    </h3>
 
-            <?= $current
-            ? str_pad(
-                $current['queue_number'],
-                3,
-                '0',
-                STR_PAD_LEFT
-            )
-            : "---"; ?>
+                    <form method="POST">
 
-        </div>
-        
-        
+                        <div class="mb-3">
 
-    </div>
-        <div class="col-md-6">
-            <!-- Quick Actions -->
+                            <label class="form-label">
+                                Reception Name
+                            </label>
 
-        
+                            <input
+                                type="text"
+                                name="reception_name"
+                                class="form-control"
+                                required>
 
-            <!-- Next Numbers -->
-            <div class="row mb-4">
-                <?php for ($i = 0; $i < 3; $i++): ?>
-                    <div class="col-md-4">
-                        <div class="stats-card">
-                            <small>Next <?= $i + 1 ?></small>
-                            <div class="stats-number">
-                                <?= isset($nextRows[$i])
-                                    ? str_pad($nextRows[$i]['queue_number'], 3, '0', STR_PAD_LEFT)
-                                    : '---'; ?>
-                            </div>
                         </div>
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Active Queue Slots
+                            </label>
+
+                            <select
+                                name="active_slots"
+                                class="form-select">
+
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+
+                            </select>
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            name="start_reception"
+                            class="btn btn-primary w-100">
+
+                            Start Reception
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    <?php 
+        exit;
+    endif;
+    ?>
+
+    <?php include 'components/sidebar.php'; ?>
+    <?php include 'components/header.php'; ?>
+    <div class="main-content">
+        <div class="d-flex justify-content-between mb-">
+
+            <div class="d-flex align-items-center gap-4">
+
+              <div>
+
+                <strong>
+                    Reception:
+                    <span id="reception-name" style="font-weight: bold; color: #0ea5ff;">
+                    <?= htmlspecialchars(
+                        $_SESSION['reception_name']
+                    ); 
+                    ?> 
+                    </span>
+                </strong>
+
+                
+
+                <small id="reception-status"class="text-success">
+
+                    &nbsp;(Active)
+
+                </small>
+
+                <br>
+
+                <small>
+
+                    Started:
+                    <?= $_SESSION['reception_start'] = date('Y-m-d H:i:s'); ?>
+
+                </small>
+
+            </div>
+
+        </div>
+            
+            <!-- Active Queues -->
+            <div id="active-queue-counter">
+                Active Queue:
+                <span id="active-count" style="font-weight: bold; color: #0ea5ff;">
+                    <?= $activeCount ?>/<?= $activeSlots ?>
+                </span>
+            </div>
+            <div class="d-flex align-items-right gap-4">
+                                    <form method="POST">
+
+                <button
+                    type="submit"
+                    name="change_reception"
+                    class="btn btn-sm btn-outline-secondary" style="color: #0ea5ff; border-color:#0ea5ff;">
+
+                    Change Reception
+
+                </button>
+
+            </form>
+            <div id="voice-settings" >
+
+                <select id="voiceSelect" class="btn btn-sm btn-outline-secondary" style="color: #0ea5ff; border-color:#0ea5ff;">
+
+                    <option>
+                        <i class="fa fa-microphone" aria-hidden="true"></i>Voice Settings
+                    </option>
+
+                </select>
+
+            </div>
+
+</div>
+        </div>
+
+        <div class="row mb-4">
+            <!-- Hero Now Serving -->
+            <!--<div
+class="now-serving-card"
+onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
+
+            <div
+                class="hero-serving col-md-6">
+      <div class="card-header">
+        <div class="header-left">
+            <!--Card Header -->
+            <div>
+                <div class="title text-start inline-block">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-people-fill" viewBox="0 0 16 16" style="color:#0ea5ff;">
+                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+                </svg>
+                &nbsp; ACTIVE QUEUES
+                <span style="font-size: 12px; color:gray;">
+                    &nbsp;&nbsp;Click a queue card to recall (voice)
+                </span></div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+                <div class="hero-label"
+                style="position:relative; cursor:pointer;"
+                onclick="announceCurrentQueue()">
+                    
+                </div>
+<div id="activeQueueContainer">
+
+<?php if($activeQueues->num_rows > 0): ?>
+
+    <?php while($queue = $activeQueues->fetch_assoc()): ?>
+
+        <?php
+
+        $minutes = floor($queue['waiting_seconds'] / 60);
+        $seconds = $queue['waiting_seconds'] % 60;
+
+        ?>
+
+        <div class="active-queue-card"
+             data-id="<?= $queue['id'] ?>"
+             data-queue="<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>">
+
+            <div class="queue-card-header">
+                <div class="queue-title">
+                    <i class="fas fa-user"></i>
+
+                    <strong>Reception :</strong>
+
+                    <?= htmlspecialchars($_SESSION['reception_name']) ?>
+                </div>
+
+                <span class="queue-badge">
+                    ACTIVE
+                </span>
+            </div>
+
+            <div class="queue-card-body">
+                <div class="queue-number-col">
+                    <span class="queue-no">
+                        <?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>
+                    </span>
+                </div>
+
+                <div class="queue-info">
+                    <div>
+                        <i class="fas fa-clock"></i>
+                        <strong>Called :</strong>
+                        <?= date(
+                            "h:i:s A",
+                            strtotime($queue['called_at'])
+                        ) ?>
                     </div>
-                <?php endfor; ?>
-            </div>
-            <div class="action-panel">
 
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <h5 class="mb-0">
-                        Actions
-                    </h5>
-              <!--<div style="position:absolute; right:10px; bottom:10px; z-index:5; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"> -->
-            <button id="nowServingCallBtn" class="btn btn-secondary" onclick="actionCall()">
-
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-megaphone" viewBox="0 0 16 16">
-                  <path d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-.214c-2.162-1.241-4.49-1.843-6.912-2.083l.405 2.712A1 1 0 0 1 5.51 15.1h-.548a1 1 0 0 1-.916-.599l-1.85-3.49-.202-.003A2.014 2.014 0 0 1 0 9V7a2.02 2.02 0 0 1 1.992-2.013 75 75 0 0 0 2.483-.075c3.043-.154 6.148-.849 8.525-2.199zm1 0v11a.5.5 0 0 0 1 0v-11a.5.5 0 0 0-1 0m-1 1.35c-2.344 1.205-5.209 1.842-8 2.033v4.233q.27.015.537.036c2.568.189 5.093.744 7.463 1.993zm-9 6.215v-4.13a95 95 0 0 1-1.992.052A1.02 1.02 0 0 0 1 7v2c0 .55.448 1.002 1.006 1.009A61 61 0 0 1 4 10.065m-.657.975 1.609 3.037.01.024h.548l-.002-.014-.443-2.966a68 68 0 0 0-1.722-.082z"/>
-                </svg>
-            </button>
-
-            <button id="actionDoneBtn" class="btn btn-secondary" disabled onclick="actionDone()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                  <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
-                </svg>
-            </button>
-
-            <button id="actionNextBtn" class="btn btn-secondary" onclick="actionNext()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-skip-end-circle" viewBox="0 0 16 16">
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                  <path d="M6.271 5.055a.5.5 0 0 1 .52.038L9.5 7.028V5.5a.5.5 0 0 1 1 0v5a.5.5 0 0 1-1 0V8.972l-2.71 1.935A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445"/>
-                </svg>
-            </button>
-
-            <button id="actionRecallBtn" class="btn btn-secondary" disabled onclick="actionRecall()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-                  <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-                </svg>
-            </button>
-
-            <button id="actionSkipForwardBtn" id="actionSkipForwardBtn" class="btn btn-secondary" onclick="actionSkip()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-skip-forward-circle" viewBox="0 0 16 16">
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                  <path d="M4.271 5.055a.5.5 0 0 1 .52.038L7.5 7.028V5.5a.5.5 0 0 1 .79-.407L11 7.028V5.5a.5.5 0 0 1 1 0v5a.5.5 0 0 1-1 0V8.972l-2.71 1.935a.5.5 0 0 1-.79-.407V8.972l-2.71 1.935A.5.5 0 0 1 4 10.5v-5a.5.5 0 0 1 .271-.445"/>
-                </svg>
-            </button>
-
-            <button id="actionCancelBtn" class="btn btn-secondary" disabled onclick="actionCancel()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
-                  <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-                </svg>
-            </button>
-        </div>
+                    <div>
+                        <i class="fas fa-stopwatch"></i>
+                        <strong>Waiting :</strong>
+                        <span class="waiting-time">
+                            <?= sprintf("%02d:%02d",$minutes,$seconds) ?>
+                        </span>
+                    </div>
                 </div>
 
-            <!-- </div> -->
-    </div>
+                <div class="queue-actions">
+                    <button class="action-icon recall" onclick="recallQueue(...)">
+                        <i class="fas fa-volume-up"></i>
+                        <span class="action-label">Recall</span>
+                    </button>
 
+                    <button class="action-icon done" onclick="doneQueue(...)">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="action-label">Done</span>
+                    </button>
 
-</div>
-    <!-- Statistics -->
-
-    <div class="row mb-4">
-
-        <div class="col-md-4">
-
-            <div class="stats-card">
-
-                <small>WAITING</small>
-
-                <div class="stats-number">
-
-                    <?= $waitingCount ?>
-
+                    <button class="action-icon missing" onclick="openMissingModal(...)">
+                        <i class="fas fa-user-slash"></i>
+                        <span class="action-label">Missing</span>
+                    </button>
                 </div>
-
             </div>
 
         </div>
 
-        <div class="col-md-4">
-
-            <div class="stats-card">
-
-                <small>COMPLETED</small>
-
-                <div class="stats-number">
-
-                    <?= $doneCount ?>
-
-                </div>
-
-            </div>
-
-        </div>
-
-                <div class="col-md-4">
-
-            <div class="stats-card">
-
-                <small>TOTAL</small>
-
-                <div class="stats-number">
-
-                    <?= $totalRows ?>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    
-
-    </div>
-    <!-- Search -->
-
-<div class="queue-toolbar mb-4">
-
-    <div class="search-box">
-        <div class="position-relative">
-        <input
-        type="text"
-        id="queueSearch"
-        class="form-control rounded-pill search-bar pe-5"
-        placeholder="Search"
-        aria-label="Search">
-        <button class="btn position-absolute top-50 end-0 translate-middle-y" type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-            </svg>
-        </button>
-        </div>
-    </div>
-
-
-<div class="queue-toolbar">
-
-        <div class="status-tabs">
-
-        <a
-            href="reception.php"
-            class="status-tab <?= $statusFilter=='' ? 'active':'' ?>">
-            All (<?= $allCount ?>)
-        </a>
-
-        <a
-            href="reception.php?status=waiting"
-            class="status-tab <?= $statusFilter=='waiting' ? 'active':'' ?>">
-            Waiting (<?= $waitingTab ?>) 
-        </a>
-
-
-        <a
-            href="reception.php?status=called"
-            class="status-tab <?= $statusFilter=='called' ? 'active':'' ?>">
-            Called (<?= $calledTab ?>)
-        </a>
-
-        <a
-            href="reception.php?status=done"
-            class="status-tab <?= $statusFilter=='done' ? 'active':'' ?>">
-            Completed(<?= $doneTab ?>)
-        </a>
-
-        <a
-            href="reception.php?status=cancelled"
-            class="status-tab <?= $statusFilter=='cancelled' ? 'active':'' ?>">
-            Cancelled(<?= $cancelTab ?>)
-        </a>
-
-    </div>
-
-</div>
-
-</div>
-
-    <!-- Queue Cards -->
-
-    <div class="queue-grid" id="queueContainer">
-<?php while($row = $queues->fetch_assoc()): ?>
-    <div
-class="queue-mini-card queue-item<?= ($current && $row['id']==$current['id']) ? ' current' : '' ?>" data-id="<?= $row['id']; ?>" data-status="<?= $row['status']; ?>"
-data-queue="<?= str_pad($row['queue_number'],3,'0',STR_PAD_LEFT); ?>">
-
-
-<?php
-/*
-$statusClass = match($row['status']) {
-
-    'waiting' => 'warning',
-    'called' => 'primary',
-    'done' => 'success',
-    'cancelled' => 'danger',
-    default => 'secondary'
-};
-*/
-?>
-
-
-
-<div class="queue-mini-number">
-
-    <?= str_pad(
-        $row['queue_number'],
-        3,
-        '0',
-        STR_PAD_LEFT
-    ); ?>
-
-</div>
-
-<div class="queue-status bg-<?= $statusClass; ?>">
-
-    <?= strtoupper($row['status']); ?>
-
-</div>
-
-<div class="queue-time">
-
-   <?= $row['issued_at']; ?>
-
-</div>
-
-<div class="queue-actions">
-
-    <a
-    class="btn btn-primary btn-sm"
-    href="#"
-    onclick="callQueue(event,
-    <?= $row['id']; ?>,
-    '<?= str_pad($row['queue_number'],3,'0',STR_PAD_LEFT); ?>'
-    )">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-megaphone" viewBox="0 0 16 16">
-  <path d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-.214c-2.162-1.241-4.49-1.843-6.912-2.083l.405 2.712A1 1 0 0 1 5.51 15.1h-.548a1 1 0 0 1-.916-.599l-1.85-3.49-.202-.003A2.014 2.014 0 0 1 0 9V7a2.02 2.02 0 0 1 1.992-2.013 75 75 0 0 0 2.483-.075c3.043-.154 6.148-.849 8.525-2.199zm1 0v11a.5.5 0 0 0 1 0v-11a.5.5 0 0 0-1 0m-1 1.35c-2.344 1.205-5.209 1.842-8 2.033v4.233q.27.015.537.036c2.568.189 5.093.744 7.463 1.993zm-9 6.215v-4.13a95 95 0 0 1-1.992.052A1.02 1.02 0 0 0 1 7v2c0 .55.448 1.002 1.006 1.009A61 61 0 0 1 4 10.065m-.657.975 1.609 3.037.01.024h.548l-.002-.014-.443-2.966a68 68 0 0 0-1.722-.082z"/>
-</svg>
-    </a>
-
-    <?php if($row['status']=='called'): ?>
-
-        <a
-        id="call-btn"
-        class="btn btn-success btn-sm"
-        href="#"
-        onclick="doneQueue(event, <?= $row['id'] ?>)">
-             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
-  <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0"/>
-</svg>
-        </a>
+    <?php endwhile; ?>
 
 <?php else: ?>
 
-<button
-id="call-btn-dis"
-class="btn btn-dark btn-sm"
-disabled>
- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
-  <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0"/>
-</svg>
-</button>
+<div class="empty-active">
 
-    <?php endif; ?>
+    <i class="fas fa-users fa-5x text-secondary mb-3"></i>
 
-    <a
-    id="cancel-btn"
-    class="btn btn-sm"
-    href="#"
-    onclick="openCancelModal(event, <?= $row['id'] ?>, '<?= str_pad($row['queue_number'],3,'0',STR_PAD_LEFT); ?>')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
-  <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
-  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-</svg>
-    </a>
+    <h5>No active queues</h5>
+
+    <small class="text-secondary">
+
+        Click "Next Queue" to call the next patient.
+
+    </small>
 
 </div>
-
-</div>
-<?php endwhile; ?>
-</div>
-
-<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="cancelConfirmModalLabel">Confirm Cancel</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to cancel queue <strong id="cancelQueueNumber"></strong>?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, keep</button>
-        <button type="button" class="btn btn-danger" onclick="confirmCancelQueue()">Yes, cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="pagination-wrapper">
-
-<?php if($page > 1): ?>
-
-<a
-class="btn btn-outline-secondary"
-href="?page=<?= $page-1 ?>">
-
-Previous
-
-</a>
-
-<?php endif; ?>
-
-
-<?php
-
-for(
-$i=1;
-$i<=$totalPages;
-$i++
-):
-
-?>
-
-<a
-class="btn <?= $i==$page
-? 'btn-primary'
-: 'btn-outline-secondary'; ?>"
-href="?page=<?= $i ?>&status=<?= $statusFilter ?>">
-
-<?= $i ?>
-
-</a>
-
-<?php endfor; ?>
-
-
-<?php if($page < $totalPages): ?>
-
-<a
-class="btn btn-outline-secondary"
-href="?page=<?= $i ?>&status=<?= $statusFilter ?>">
-
-Next
-
-</a>
 
 <?php endif; ?>
 
 </div>
-<script>
-
-function speakQueue(number)
-{
-    let speech =
-    new SpeechSynthesisUtterance(
-        
-        number +
-       
-    );
-    speech.volume = 1;
-    speech.rate = 0.9;
-
-    speechSynthesis.speak(speech);
-}
-
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!--<script>
-
-setInterval(function()
-{
-    location.reload();
-},
-2000);
-
-</script> -->
-
-<script>
-
-let cancelQueueId = null;
-let currentCalledQueueId = null;
-let currentCalledQueueNumber = null;
-
-function updateNowServing()
-{
-    const servingDisplay = document.getElementById('nowServingNumber');
-    if (currentCalledQueueNumber) {
-        servingDisplay.textContent = currentCalledQueueNumber;
-    } else {
-        servingDisplay.textContent = '---';
-    }
-}
-
-function updateActionButtonsState()
-{
-    const hasCalledQueue = currentCalledQueueId !== null;
-    document.getElementById("actionDoneBtn").disabled = !hasCalledQueue;
-    document.getElementById("actionNextBtn").disabled = !hasCalledQueue;
-    document.getElementById("actionRecallBtn").disabled = !hasCalledQueue;
-    document.getElementById("actionCancelBtn").disabled = !hasCalledQueue;
-    updateNowServing();
-}
-
-function actionCall()
-{
-    // Prefer the first visible waiting queue; fall back to first waiting or Now Serving
-    const waitingItems = Array.from(document.querySelectorAll('.queue-item[data-status="waiting"]'));
-
-    let waitingQueue = waitingItems.find(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && style.visibility !== 'hidden' && item.offsetParent !== null;
-    });
-
-    if (!waitingQueue && waitingItems.length > 0) {
-        waitingQueue = waitingItems[0];
-    }
-
-    // If still not found, try to resolve using the Now Serving display (in case of filters/pagination)
-    if (!waitingQueue) {
-        const now = document.getElementById('nowServingNumber')?.textContent.trim();
-        if (now && now !== '---') {
-            const match = Array.from(document.querySelectorAll('.queue-item')).find(item => item.getAttribute('data-queue') === now);
-            if (match && match.getAttribute('data-status') === 'waiting') {
-                waitingQueue = match;
-            } else if (match) {
-                // try to find next waiting after nowServing number
-                const qNum = parseInt(now, 10);
-                waitingQueue = waitingItems.find(item => parseInt(item.getAttribute('data-queue'), 10) > qNum);
-            }
-        }
-    }
-
-    if (!waitingQueue) {
-        alert("No waiting queue available");
-        return;
-    }
-
-    const queueNumber = waitingQueue.querySelector('.queue-mini-number').textContent.trim();
-    const queueId = waitingQueue.getAttribute('data-id');
-
-    let speech = new SpeechSynthesisUtterance(queueNumber);
-    speech.rate = 0.9;
-
-    speech.onend = function()
-    {
-        fetch("actions/call_queue.php?id=" + queueId)
-            .then(() => {
-                currentCalledQueueId = queueId;
-                currentCalledQueueNumber = queueNumber;
-                updateActionButtonsState();
-            });
-    };
-
-    speechSynthesis.speak(speech);
-}
-
-function findNextWaitingQueue()
-{
-    const waitingItems = Array.from(document.querySelectorAll('.queue-item[data-status="waiting"]'));
-
-    return waitingItems.find(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && style.visibility !== 'hidden' && item.offsetParent !== null;
-    }) || waitingItems[0] || null;
-}
-
-function actionDone()
-{
-    if (!currentCalledQueueId)
-        return;
-
-    fetch(
-        "actions/done_queue.php?id="
-        + currentCalledQueueId
-    )
-    .then(() => {
-
-        currentCalledQueueId = null;
-        currentCalledQueueNumber = null;
-
-        updateActionButtonsState();
-
-        location.reload();
-    });
-}
-
-function actionNext()
-{
-    if (!currentCalledQueueId)
-    {
-        actionCall();
-        return;
-    }
-
-    fetch("actions/done_queue.php?id=" + currentCalledQueueId)
-    .then(() => {
-
-        currentCalledQueueId = null;
-        currentCalledQueueNumber = null;
-
-        const nextQueue = findNextWaitingQueue();
-
-        if(!nextQueue)
-        {
-            updateActionButtonsState();
-            return;
-        }
-
-        const nextQueueId =
-            nextQueue.dataset.id;
-
-        const nextQueueNumber =
-            nextQueue.dataset.queue;
-
-        let speech =
-        new SpeechSynthesisUtterance(
-            nextQueueNumber
-        );
-
-        speech.rate = 0.9;
-
-        speech.onend = function()
-        {
-            fetch(
-                "actions/call_queue.php?id="
-                + nextQueueId
-            )
-            .then(() => {
-
-                currentCalledQueueId =
-                    nextQueueId;
-
-                currentCalledQueueNumber =
-                    nextQueueNumber;
-
-                updateActionButtonsState();
-
-                location.reload();
-            });
-        };
-
-        speechSynthesis.speak(speech);
-    });
-}
-
-function actionRecall()
-{
-    if (!currentCalledQueueNumber) return;
-
-    let speech = new SpeechSynthesisUtterance(currentCalledQueueNumber);
-    speech.rate = 0.9;
-    speechSynthesis.speak(speech);
-}
-
-function actionCancel()
-{
-    if (!currentCalledQueueId) return;
-
-    cancelQueueId = currentCalledQueueId;
-    document.getElementById("cancelQueueNumber").textContent = currentCalledQueueNumber;
-
-    const modalEl = document.getElementById("cancelConfirmModal");
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-function callQueue(event, id, number)
-{
-    event.preventDefault();
-
-    let speech = new SpeechSynthesisUtterance(
-        
-        number
-        
-    );
-
-    speech.rate = 0.9;
-
-    speech.onend = function()
-    {
-        // Make request in background without navigating (page stays in same position)
-        fetch("actions/call_queue.php?id=" + id)
-            .then(() => {
-                currentCalledQueueId = id;
-                currentCalledQueueNumber = number;
-                updateActionButtonsState();
-            });
-    };
-
-    speechSynthesis.speak(speech);
-}
-function actionSkip()
-{
-    const nextQueue =
-        findNextWaitingQueue();
-
-    if(!nextQueue)
-    {
-        alert("No waiting queue");
-        return;
-    }
-
-    const queueId =
-        nextQueue.dataset.id;
-
-    openCancelModal(
-        new Event('click'),
-        queueId,
-        nextQueue.dataset.queue
-    );
-}
-
-function doneQueue(event, id)
-{
-    event.preventDefault();
-    fetch("actions/done_queue.php?id=" + id);
-}
-
-function openCancelModal(event, id, number)
-{
-    event.preventDefault();
-    cancelQueueId = id;
-    document.getElementById("cancelQueueNumber").textContent = number;
-
-    const modalEl = document.getElementById("cancelConfirmModal");
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-function confirmCancelQueue()
-{
-    if (!cancelQueueId) {
-        return;
-    }
-
-    fetch("actions/cancel_queue.php?id=" + cancelQueueId)
-        .then(() => {
-            const modalEl = document.getElementById("cancelConfirmModal");
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
-            }
-            currentCalledQueueId = null;
-            currentCalledQueueNumber = null;
-            cancelQueueId = null;
-            updateActionButtonsState();
-        });
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // If server has a current called queue, use it to initialize state
-    <?php if($current): ?>
-        currentCalledQueueId = "<?= $current['id']; ?>";
-        currentCalledQueueNumber = "<?= str_pad($current['queue_number'],3,'0',STR_PAD_LEFT); ?>";
-    <?php else: ?>
-        const calledQueue = document.querySelector('.queue-item[data-status="called"]');
-        if (calledQueue) {
-            currentCalledQueueId = calledQueue.getAttribute('data-id');
-            currentCalledQueueNumber = calledQueue.querySelector('.queue-mini-number').textContent.trim();
-        }
-    <?php endif; ?>
-    updateActionButtonsState();
-});
-
-</script>
-
-<script>
-
-document
-.getElementById("queueSearch")
-.addEventListener("keyup", function() {
-
-    let value =
-    this.value.toLowerCase();
-
-    document
-    .querySelectorAll(".queue-item")
-    .forEach(function(item){
-
-        let queue =
-        item.dataset.queue.toLowerCase();
-
-        item.style.display =
-        queue.includes(value)
-        ? ""
-        : "none";
-
-    });
-
-});
-
-</script>
-
-<script>
-
-document
-.querySelectorAll(".status-tab")
-.forEach(tab => {
-
-    tab.addEventListener(
-        "click",
-        function(){
-
-            document
-            .querySelectorAll(".status-tab")
-            .forEach(btn =>
-                btn.classList.remove("active")
-            );
-
-            this.classList.add("active");
-
-            let status =
-            this.dataset.status;
-
-            document
-            .querySelectorAll(".queue-item")
-            .forEach(card => {
-
-                if(status === "all")
-                {
-                    card.style.display = "";
-                    return;
-                }
-
-                card.style.display =
-                card.dataset.status === status
-                ? ""
-                : "none";
-
-            });
-
-        }
-    );
-
-});
-
-</script>
+
+
+
+
+
+                <!-- </div>-->
+            </div>
+
+                <!-- Quick Actions -->
+            <div
+                class="col-md-6">
+                <div
+                class="hero-serving col-md-12">
+
+                <div class="hero-label text-start">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi 
+                 zbi-calendar2-week" viewBox="0 0 16 16" style="color:#0ea5ff;">
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
+                <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5zM11 7.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
+                </svg>&nbsp; UPCOMING QUEUE
+                </div><br>
+
+
+                <!-- Next Numbers -->
+                <div class="row mb-4">
+                  <?php  for ($i = 0; $i < 6; $i++): ?>
+                        <div class="col-md-4 mb-3">
+                            <div class="stats-card">
+                                <small>UPCOMING</small>
+                                <div class="stats-number-queue" style="color:#0ea5ff; font-size: 35px; font-weight: bold;">
+                                    <?= isset($nextRows[$i])
+                                        ? str_pad($nextRows[$i]['queue_number'], 3, '0', STR_PAD_LEFT)
+                                        : '---'; ?>
+                                </div>
+                            </div>
+                        </div> 
+
+                    <?php endfor;  ?>
+
+                  </DIV> 
+                </div><br>
+                <div class="action-panel col-lg-12">
+
+                    <!--<div class="d-flex justify-content-between align-items-center"> -->
+
+
+   
+                        <!--
+                            <div class="d-flex gap-2 mb-2">
+
+                                <button
+                                    id="actionDoneBtn"
+                                    class="btn btn-success flex-fill"
+                                    disabled
+                                    onclick="actionDone()">
+                                    Done
+                                </button>
+
+                                <button
+                                    id="actionCancelBtn"
+                                    class="btn btn-warning flex-fill"
+                                    disabled
+                                    onclick="actionCancel()">
+                                    Skip
+                                </button>
+
+                            </div> -->
+
+                            <button
+                                id="actionNextBtn"
+                                class="btn btn-primary w-100 p-3"
+                                onclick="actionNext()"
+                                <?= ($activeCount >= $activeSlots) ? 'disabled' : ''; ?>>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-volume-up-fill" viewBox="0 0 16 16">
+                                    <path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/>
+                                    <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
+                                    <path d="M8.707 11.182A4.5 4.5 0 0 0 10.025 8a4.5 4.5 0 0 0-1.318-3.182L8 5.525A3.5 3.5 0 0 1 9.025 8 3.5 3.5 0 0 1 8 10.475zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06"/>
+                                </svg>
+                                Next Queue
+                            </button>
+
+                            <?php if($activeCount >= $activeSlots): ?>
+                            <small class="text-warning">
+
+                                Maximum active queues reached
+                                (<?= $activeSlots ?>)
+                            </small>
+                           
+
+    
+
+<?php endif; ?>
+                       
+                    <!-- </div> -->
+
+
+                </div>
+
+                <div
+                    class="modal fade"
+                    id="skipModal">
+
+                    <div class="modal-dialog">
+
+                        <div class="modal-content">
+
+                            <div class="modal-header">
+
+                                <h5>
+                                    Skip Queue
+                                </h5>
+
+                            </div>
+
+                            <div class="modal-body">
+
+                                Are you sure you want
+                                to skip this queue?
+
+                            </div>
+
+                            <div class="modal-footer">
+
+                                <button
+                                    class="btn btn-secondary"
+                                    data-bs-dismiss="modal">
+
+                                    Cancel
+
+                                </button>
+
+                                <button
+                                    class="btn btn-warning"
+                                    onclick="confirmSkip()">
+
+                                    Skip Queue
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+                <!-- Statistics -->
+
+                <div class="row mb-1">
+
+                    <div class="col-md-3">
+
+                        <div class="stats-card">
+                            
+                            <small>WAITING</small>
+
+                            <div class="stats-number" style="color:#0ea5ff">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="color:#0ea5ff" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
+                                <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/>
+                                </svg>&nbsp;<?= $waitingCount ?>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <div class="stats-card">
+
+                            <small>COMPLETED</small>
+
+                            <div class="stats-number" style="color:green">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                                </svg>&nbsp;<?= $doneCount ?> 
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3" >
+
+                        <div class="stats-card">
+
+                            <small>CANCELLED</small>
+
+                            <div class="stats-number" style="color:red">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                </svg>&nbsp;<?= $doneCount ?>
+                                
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <div class="stats-card" style="color:yellow">
+
+                            <small>TOTAL</small>
+
+                            <div class="stats-number">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-ticket-detailed" viewBox="0 0 16 16">
+                                <path d="M4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5M5 7a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2z"/>
+                                <path d="M0 4.5A1.5 1.5 0 0 1 1.5 3h13A1.5 1.5 0 0 1 16 4.5V6a.5.5 0 0 1-.5.5 1.5 1.5 0 0 0 0 3 .5.5 0 0 1 .5.5v1.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5V10a.5.5 0 0 1 .5-.5 1.5 1.5 0 1 0 0-3A.5.5 0 0 1 0 6zM1.5 4a.5.5 0 0 0-.5.5v1.05a2.5 2.5 0 0 1 0 4.9v1.05a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-1.05a2.5 2.5 0 0 1 0-4.9V4.5a.5.5 0 0 0-.5-.5z"/>
+                                </svg>&nbsp;<?= $totalRows ?>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+ 
+                <script>
+                    function speakQueue(number) {
+                        let speech =
+                            new SpeechSynthesisUtterance(
+                                number
+                            );
+                        speech.volume = 1;
+                        speech.rate = 0.9;
+
+                        speechSynthesis.speak(speech);
+                    }
+
+                
+
+                    const ReceptionConfig = {
+
+                        currentQueueId:
+                            <?= $current ? $current['id'] : 'null'; ?>,
+
+                        currentQueueNumber:
+                            <?= $current
+                                ? '"' . str_pad($current['queue_number'],3,'0',STR_PAD_LEFT) . '"'
+                                : 'null'; ?>,
+
+                        activeSlots:
+                            <?= $activeSlots ?>,
+
+                        activeCount:
+                            <?= $activeCount ?>
+
+                    };
+
+
+                </script>
+
+
+                <script 
+                    src="assets/js/reception.js"
+                    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+                    
+                </script>
+                
+               
+
+
+                <div
+                    class="toast-container position-fixed bottom-0 end-0 p-3">
+
+                    <div
+                        id="actionToast"
+                        class="toast align-items-center text-bg-success border-0">
+
+                        <div class="d-flex">
+
+                            <div
+                                class="toast-body"
+                                id="actionToastMessage">
+
+                                Success
+
+                            </div>
+
+                            <button
+                                type="button"
+                                class="btn-close btn-close-white me-2 m-auto"
+                                data-bs-dismiss="toast">
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+     
 </body>
 
 </html>

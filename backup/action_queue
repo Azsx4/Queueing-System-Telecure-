@@ -1,0 +1,40 @@
+function actionNext() {
+  if (!currentCalledQueueId) {
+    actionCall();
+    return;
+  }
+
+  fetch("actions/done_queue.php?id=" + currentCalledQueueId).then(() => {
+    currentCalledQueueId = null;
+    currentCalledQueueNumber = null;
+
+    const nextQueue = findNextWaitingQueue();
+
+    if (!nextQueue) {
+      updateActionButtonsState();
+      return;
+    }
+
+    const nextQueueId = nextQueue.dataset.id;
+
+    const nextQueueNumber = nextQueue.dataset.queue;
+
+    let speech = new SpeechSynthesisUtterance(nextQueueNumber);
+
+    speech.rate = 0.9;
+
+    speech.onend = function () {
+      fetch("actions/call_queue.php?id=" + nextQueueId).then(() => {
+        currentCalledQueueId = nextQueueId;
+
+        currentCalledQueueNumber = nextQueueNumber;
+
+        updateActionButtonsState();
+
+        location.reload();
+      });
+    };
+
+    speechSynthesis.speak(speech);
+  });
+}

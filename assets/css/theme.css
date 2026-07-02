@@ -99,8 +99,23 @@
         color: var(--text);
         border: 1px solid var(--border);
     }
+    #reception-name{
+    color: var(--accent-color);
+    font-weight:700;
+    }
+    #reception-status.active{
+    color:#28a745;
+    }
+    #reception-status.away{
+        color:#ffc107;
+    }
+    }
+    #active-count{
+    color:var(--accent-color);
+    font-weight:700;
+    }
 
-}
+
 
 body {
 
