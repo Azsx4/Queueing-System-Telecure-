@@ -41,111 +41,24 @@ if (isset($_POST['start_reception'])) {
 
 $today = date('Y-m-d');
 
-$activeCount = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='called'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
+$activeSlots = $_SESSION['active_slots'] ?? 1;
 
-$activeSlots =
-$_SESSION['active_slots'] ?? 1;
-
-
-$allCount = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE queue_date='$today'
-")->fetch_assoc()['total'];
-
-$waitingTab = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='waiting'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$calledTab = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='called'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$doneTab = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='done'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$cancelTab = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='cancelled'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-
-$limit = 20;
-
-$page = isset($_GET['page'])
-    ? (int)$_GET['page']
-    : 1;
-
-if ($page < 1) {
-    $page = 1;
-}
-
-$offset = ($page - 1) * $limit;
-
-$countSql = "
-SELECT COUNT(*) total
-FROM queues
-WHERE queue_date='$today'
-";
-
-//if($statusFilter != '')
-//{
-//  $countSql .= "
-//   AND status='$statusFilter'
-//";
-//}
-
-$totalRows =
-    $conn->query($countSql)
-        ->fetch_assoc()['total'];
-
-$totalPages =
-    ceil($totalRows / $limit);
-
-$waitingCount = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='waiting'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$doneCount = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='done'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$cancelledCount = $conn->query("
-SELECT COUNT(*) total
-FROM queues
-WHERE status='cancelled'
-AND queue_date='$today'
-")->fetch_assoc()['total'];
-
-$queues = $conn->query("
-SELECT *
+$countResult = $conn->query("
+SELECT
+    COUNT(*) AS total,
+    SUM(CASE WHEN status = 'waiting' THEN 1 ELSE 0 END) AS waiting,
+    SUM(CASE WHEN status = 'called' THEN 1 ELSE 0 END) AS called,
+    SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done,
+    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
 FROM queues
 WHERE queue_date = '$today'
-ORDER BY queue_number ASC
-");
+")->fetch_assoc();
+
+$activeCount = $countResult['called'];
+$totalRows = $countResult['total'];
+$waitingCount = $countResult['waiting'];
+$doneCount = $countResult['done'];
+$cancelledCount = $countResult['cancelled'];
 
 /* Replace by $activeQueues */
 $current = $conn->query("
@@ -224,11 +137,10 @@ while ($row = $nextResult->fetch_assoc()) {
     <link rel="stylesheet" href="assets/css/theme.css">
     <link href="assets/css/styles.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://jsdelivr.net">
-    <script
-        src="assets/js/theme.js">
-        
-    </script>
+    
+    <script src="assets/js/theme.js"></script>
+              
+    
 </head>
 
 <style>
@@ -245,7 +157,7 @@ while ($row = $nextResult->fetch_assoc()) {
 }
 
 .active-queue-card {
-  background: #ffffff;
+  background: #181818;
 
   border-radius: 18px;
 
@@ -255,13 +167,12 @@ while ($row = $nextResult->fetch_assoc()) {
 
   border-left: 6px solid #0ea5ff;
 
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .active-queue-card:hover {
   transform: translateY(-2px);
 
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 18px rgba(207, 207, 207, 0.08);
 }
 
 .queue-card-header {
@@ -279,7 +190,7 @@ while ($row = $nextResult->fetch_assoc()) {
 }
 
 .queue-title {
-  color: #0ea5ff;
+  color: #fff;
 
   display: inline-flex;
 
@@ -298,6 +209,7 @@ while ($row = $nextResult->fetch_assoc()) {
   gap: 1.5rem;
 
   flex-wrap: wrap;
+  
 }
 
 .queue-number-col {
@@ -333,7 +245,7 @@ while ($row = $nextResult->fetch_assoc()) {
 
   gap: 0.65rem;
 
-  color: #555;
+  color: #fff;
 }
 
 .queue-info div {
@@ -360,6 +272,8 @@ while ($row = $nextResult->fetch_assoc()) {
   gap: 0.5rem;
 
   justify-content: flex-end;
+
+  color: #fff;
 }
 
 .action-icon {
@@ -397,13 +311,23 @@ while ($row = $nextResult->fetch_assoc()) {
 }
 
 .action-icon.done {
+  background: #3e4140;
+}
+
+.action-icon.done:hover {
   background: #198754;
 }
 
 .action-icon.missing {
-  background: #ffc107;
+  background: #cf2717;
 
   color: #000;
+}
+
+.queue-badge {
+  background: #202d27;
+  color: #198754;
+  border:1px solid #198754
 }
 
 .action-icon .action-label {
@@ -521,76 +445,45 @@ while ($row = $nextResult->fetch_assoc()) {
     <?php include 'components/sidebar.php'; ?>
     <?php include 'components/header.php'; ?>
     <div class="main-content">
-        <div class="d-flex justify-content-between mb-">
+        <div id="reception-header" class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-3 header-top-row">
+                <div>
+                    <strong>
+                        Reception:
+                        <span id="reception-name">
+                            <?= htmlspecialchars($_SESSION['reception_name']); ?>
+                        </span>
+                    </strong>
+                    <small id="reception-status" class="text-success">&nbsp;(Active)</small>
+                    <br>
+                    <small>Started: <?= $_SESSION['reception_start'] = date('Y-m-d H:i:s'); ?></small>
+                </div>
 
-            <div class="d-flex align-items-center gap-4">
-
-              <div>
-
-                <strong>
-                    Reception:
-                    <span id="reception-name" style="font-weight: bold; color: #0ea5ff;">
-                    <?= htmlspecialchars(
-                        $_SESSION['reception_name']
-                    ); 
-                    ?> 
-                    </span>
-                </strong>
-
-                
-
-                <small id="reception-status"class="text-success">
-
-                    &nbsp;(Active)
-
-                </small>
-
-                <br>
-
-                <small>
-
-                    Started:
-                    <?= $_SESSION['reception_start'] = date('Y-m-d H:i:s'); ?>
-
-                </small>
 
             </div>
+                <div id="active-queue-counter">
+                    Active Queue:
+                    <span id="active-count"><?= $activeCount ?>/<?= $activeSlots ?></span>
+                </div>
 
-        </div>
-            
-            <!-- Active Queues -->
-            <div id="active-queue-counter">
-                Active Queue:
-                <span id="active-count" style="font-weight: bold; color: #0ea5ff;">
-                    <?= $activeCount ?>/<?= $activeSlots ?>
-                </span>
+    
+            <div class="d-flex flex-wrap align-items-center gap-3 header-controls-row">
+                                <form method="POST" class="change-reception-form">
+                    <button
+                        type="submit"
+                        name="change_reception"
+                        class="change-reception-btn"
+                        >
+                        <i class="fas fa-exchange-alt"></i>
+                        <span class="action-label">Change Reception</span>
+                    </button>
+                </form>
+                <div id="voice-settings">
+                    <select id="voiceSelect" class="voice-select">
+                        <option value="">Voice Settings</option>
+                    </select>
+                </div>
             </div>
-            <div class="d-flex align-items-right gap-4">
-                                    <form method="POST">
-
-                <button
-                    type="submit"
-                    name="change_reception"
-                    class="btn btn-sm btn-outline-secondary" style="color: #0ea5ff; border-color:#0ea5ff;">
-
-                    Change Reception
-
-                </button>
-
-            </form>
-            <div id="voice-settings" >
-
-                <select id="voiceSelect" class="btn btn-sm btn-outline-secondary" style="color: #0ea5ff; border-color:#0ea5ff;">
-
-                    <option>
-                        <i class="fa fa-microphone" aria-hidden="true"></i>Voice Settings
-                    </option>
-
-                </select>
-
-            </div>
-
-</div>
         </div>
 
         <div class="row mb-4">
@@ -638,7 +531,11 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
         <div class="active-queue-card"
              data-id="<?= $queue['id'] ?>"
-             data-queue="<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>">
+             data-queue="<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>"
+             onclick="recallQueue(
+                <?= $queue['id'] ?>,
+                '<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>'
+             )">
 
             <div class="queue-card-header">
                 <div class="queue-title">
@@ -681,17 +578,14 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                 </div>
 
                 <div class="queue-actions">
-                    <button class="action-icon recall" onclick="recallQueue(...)">
-                        <i class="fas fa-volume-up"></i>
-                        <span class="action-label">Recall</span>
-                    </button>
-
-                    <button class="action-icon done" onclick="doneQueue(...)">
+                    <button class="action-icon done" type="button" onclick="event.stopPropagation(); doneQueue(<?= $queue['id'] ?>)">
                         <i class="fas fa-check-circle"></i>
                         <span class="action-label">Done</span>
                     </button>
 
-                    <button class="action-icon missing" onclick="openMissingModal(...)">
+                    <button class="action-icon missing queue-action action-missing" type="button" onclick="event.stopPropagation(); showMissingModal(<?= $queue['id'] ?>,
+                    '<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>'
+        )">
                         <i class="fas fa-user-slash"></i>
                         <span class="action-label">Missing</span>
                     </button>
@@ -821,7 +715,7 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                 <div
                     class="modal fade"
-                    id="skipModal">
+                    id="cancelConfirmModal">
 
                     <div class="modal-dialog">
 
@@ -830,15 +724,15 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                             <div class="modal-header">
 
                                 <h5>
-                                    Skip Queue
+                                    Cancel Queue
                                 </h5>
 
                             </div>
 
                             <div class="modal-body">
 
-                                Are you sure you want
-                                to skip this queue?
+                                Are you sure you want to cancel queue
+                                <strong id="cancelQueueNumber"></strong>?
 
                             </div>
 
@@ -854,9 +748,9 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                                 <button
                                     class="btn btn-warning"
-                                    onclick="confirmSkip()">
+                                    onclick="confirmCancelQueue()">
 
-                                    Skip Queue
+                                    Confirm
 
                                 </button>
 
@@ -946,48 +840,11 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
 
                 </div>
- 
-                <script>
-                    function speakQueue(number) {
-                        let speech =
-                            new SpeechSynthesisUtterance(
-                                number
-                            );
-                        speech.volume = 1;
-                        speech.rate = 0.9;
-
-                        speechSynthesis.speak(speech);
-                    }
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="assets/js/reception.js"></script>
 
                 
 
-                    const ReceptionConfig = {
-
-                        currentQueueId:
-                            <?= $current ? $current['id'] : 'null'; ?>,
-
-                        currentQueueNumber:
-                            <?= $current
-                                ? '"' . str_pad($current['queue_number'],3,'0',STR_PAD_LEFT) . '"'
-                                : 'null'; ?>,
-
-                        activeSlots:
-                            <?= $activeSlots ?>,
-
-                        activeCount:
-                            <?= $activeCount ?>
-
-                    };
-
-
-                </script>
-
-
-                <script 
-                    src="assets/js/reception.js"
-                    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-                    
-                </script>
                 
                
 
@@ -1021,6 +878,65 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                 </div>
 
+
+</div>
+                <div class="modal fade" id="missingModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    Mark Queue as Missing
+
+                </h5>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p>
+
+                    Are you sure you want to mark
+                    <strong id="missingQueueNumber"></strong>
+                    as <strong>Missing</strong>?
+
+                </p>
+
+                <small class="text-muted">
+
+                    The patient can still be recalled later if they return.
+
+                </small>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+
+                    Cancel
+
+                </button>
+
+                <button
+                    class="btn btn-danger"
+                    id="confirmMissingBtn">
+
+                    Confirm Missing
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
      
 </body>
 
