@@ -19,26 +19,6 @@ WHERE id='$id'
 ");
 
 $today = date('Y-m-d');
-
-$next = $row['queue_number'] + 1;
-
-$conn->query("
-INSERT INTO queues
-(
-queue_number,
-queue_date,
-status
-)
-VALUES
-(
-'$next',
-'$today',
-'pending'
-)
-");
-
-$newId = $conn->insert_id;
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -72,7 +52,7 @@ window.onload = function(){
     setTimeout(function(){
 
         window.location =
-        "index.php?id=<?=$newId?>";
+        "../index.php";
 
     },1000);
 
