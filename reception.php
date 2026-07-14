@@ -13,27 +13,57 @@ if (
 
 include 'database/config.php';
 
-if(isset($_POST['change_reception']))
-{
-    session_destroy();
+// If a reception_id exists in session, load its persistent settings from DB
+if (isset($_SESSION['reception_id'])) {
+    $stmt = $conn->prepare("SELECT * FROM receptions WHERE id = ? LIMIT 1");
+    if ($stmt) {
+        $stmt->bind_param('i', $_SESSION['reception_id']);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $receptionRow = $res->fetch_assoc();
+        if ($receptionRow) {
+            // populate session values from DB so code below can keep using session variables
+            $_SESSION['reception_name'] = $receptionRow['name'];
+            $_SESSION['active_slots'] = (int) $receptionRow['active_slots'];
+            $_SESSION['reception_start'] = $receptionRow['started_at'];
+            $_SESSION['reception_date'] = date('Y-m-d', strtotime($receptionRow['started_at']));
+        } else {
+            // invalid reception_id stored in session
+            unset($_SESSION['reception_id']);
+        }
+    }
+}
+
+if (isset($_POST['change_reception'])) {
+    // only clear the reception assignment for this user/session
+    unset($_SESSION['reception_id']);
+    unset($_SESSION['reception_name']);
+    unset($_SESSION['active_slots']);
+    unset($_SESSION['reception_start']);
+    unset($_SESSION['reception_date']);
 
     header("Location: reception.php");
     exit;
 }
 
 if (isset($_POST['start_reception'])) {
+    // Persist reception settings into `receptions` table and store the id in session
+    $name = trim($_POST['reception_name']);
+    $active_slots = intval($_POST['active_slots']);
+    $started_at = date('Y-m-d H:i:s');
 
-    $_SESSION['reception_name'] =
-        trim($_POST['reception_name']);
+    $stmt = $conn->prepare("INSERT INTO receptions (name, active_slots, started_at) VALUES (?, ?, ?)");
+    if ($stmt) {
+        $stmt->bind_param('sis', $name, $active_slots, $started_at);
+        $stmt->execute();
+        $newId = $stmt->insert_id;
 
-    $_SESSION['active_slots'] =
-        intval($_POST['active_slots']);
-
-    $_SESSION['reception_date'] =
-        date('Y-m-d');
-
-    $_SESSION['reception_start'] =
-        date('Y-m-d H:i:s');
+        $_SESSION['reception_id'] = $newId;
+        $_SESSION['reception_name'] = $name;
+        $_SESSION['active_slots'] = $active_slots;
+        $_SESSION['reception_date'] = date('Y-m-d');
+        $_SESSION['reception_start'] = $started_at;
+    }
 
     header("Location: reception.php");
     exit;
@@ -70,17 +100,20 @@ ORDER BY called_at DESC
 LIMIT 1
 ")->fetch_assoc();
 
-$activeQueues = $conn->query("
-SELECT
+$activeQueues = $conn->query(
+"SELECT
     id,
     queue_number,
     called_at,
-    TIMESTAMPDIFF(SECOND, called_at, NOW()) AS waiting_seconds
+    TIMESTAMPDIFF(SECOND, called_at, NOW()) AS waiting_seconds,
+    reception_name,
+    called_by
 FROM queues
 WHERE status='called'
 AND queue_date='$today'
 ORDER BY called_at ASC
-");
+"
+);
 
 $activeCount = $conn->query("
 SELECT COUNT(*) total
@@ -98,6 +131,7 @@ $currentQueueNumber = $current ? (int) $current['queue_number'] : 0;
 
 $nextRows = [];
 
+
 if ($current) {
     $nextResult = $conn->query(
         "SELECT *
@@ -105,8 +139,17 @@ if ($current) {
         WHERE status='waiting'
         AND queue_date='$today'
         AND queue_number > {$currentQueueNumber}
-        ORDER BY queue_number ASC
-        LIMIT 3"
+ORDER BY
+
+CASE
+WHEN priority_order > 0 THEN 0
+ELSE 1
+END,
+
+priority_order ASC,
+
+queue_number ASC
+        LIMIT 6"
     );
 } else {
     $nextResult = $conn->query(
@@ -114,8 +157,17 @@ if ($current) {
         FROM queues
         WHERE status='waiting'
         AND queue_date='$today'
-        ORDER BY queue_number ASC
-        LIMIT 3"
+ORDER BY
+
+CASE
+WHEN priority_order > 0 THEN 0
+ELSE 1
+END,
+
+priority_order ASC,
+
+queue_number ASC
+        LIMIT 6"
     );
 }
 
@@ -456,7 +508,7 @@ while ($row = $nextResult->fetch_assoc()) {
                     </strong>
                     <small id="reception-status" class="text-success">&nbsp;(Active)</small>
                     <br>
-                    <small>Started: <?= $_SESSION['reception_start'] = date('Y-m-d H:i:s'); ?></small>
+                    <small>Started: <?= isset($_SESSION['reception_start']) ? htmlspecialchars($_SESSION['reception_start']) : 'N/A' ?></small>
                 </div>
 
 
@@ -468,16 +520,17 @@ while ($row = $nextResult->fetch_assoc()) {
 
     
             <div class="d-flex flex-wrap align-items-center gap-3 header-controls-row">
-                                <form method="POST" class="change-reception-form">
-                    <button
-                        type="submit"
-                        name="change_reception"
-                        class="change-reception-btn"
-                        >
-                        <i class="fas fa-exchange-alt"></i>
-                        <span class="action-label">Change Reception</span>
-                    </button>
-                </form>
+                                <form id="changeReceptionForm" method="POST" class="change-reception-form">
+                                    <input type="hidden" name="change_reception" value="1">
+                                    <button
+                                        type="button"
+                                        id="changeReceptionBtn"
+                                        class="change-reception-btn"
+                                        >
+                                        <i class="fas fa-exchange-alt"></i>
+                                        <span class="action-label">Change Reception</span>
+                                    </button>
+                                </form>
                 <div id="voice-settings">
                     <select id="voiceSelect" class="voice-select">
                         <option value="">Voice Settings</option>
@@ -523,9 +576,11 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
     <?php while($queue = $activeQueues->fetch_assoc()): ?>
 
         <?php
-
         $minutes = floor($queue['waiting_seconds'] / 60);
         $seconds = $queue['waiting_seconds'] % 60;
+
+        $callerName = $queue['reception_name'] ?? 'Unknown';
+        $isCaller = isset($_SESSION['reception_id']) && isset($queue['called_by']) && (int)$queue['called_by'] === (int)$_SESSION['reception_id'];
 
         ?>
 
@@ -543,7 +598,7 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                     <strong>Reception :</strong>
 
-                    <?= htmlspecialchars($_SESSION['reception_name']) ?>
+                    <?= htmlspecialchars($callerName) ?>
                 </div>
 
                 <span class="queue-badge">
@@ -569,6 +624,12 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                     </div>
 
                     <div>
+                        <i class="fas fa-user"></i>
+                        <strong>Called by :</strong>
+                        <?= htmlspecialchars($callerName) ?>
+                    </div>
+
+                    <div>
                         <i class="fas fa-stopwatch"></i>
                         <strong>Waiting :</strong>
                         <span class="waiting-time">
@@ -578,17 +639,29 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                 </div>
 
                 <div class="queue-actions">
-                    <button class="action-icon done" type="button" onclick="event.stopPropagation(); doneQueue(<?= $queue['id'] ?>)">
-                        <i class="fas fa-check-circle"></i>
-                        <span class="action-label">Done</span>
-                    </button>
+                    <?php if ($isCaller): ?>
+                        <button class="action-icon done" type="button" onclick="event.stopPropagation(); doneQueue(<?= $queue['id'] ?>)">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="action-label">Done</span>
+                        </button>
 
-                    <button class="action-icon missing queue-action action-missing" type="button" onclick="event.stopPropagation(); showMissingModal(<?= $queue['id'] ?>,
-                    '<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>'
-        )">
-                        <i class="fas fa-user-slash"></i>
-                        <span class="action-label">Missing</span>
-                    </button>
+                        <button class="action-icon missing queue-action action-missing" type="button" onclick="event.stopPropagation(); showMissingModal(<?= $queue['id'] ?>,
+                        '<?= str_pad($queue['queue_number'],3,'0',STR_PAD_LEFT) ?>'
+            )">
+                            <i class="fas fa-user-slash"></i>
+                            <span class="action-label">Missing</span>
+                        </button>
+                    <?php else: ?>
+                        <button class="action-icon done" type="button" disabled title="Called by <?= htmlspecialchars($callerName) ?>">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="action-label">Done</span>
+                        </button>
+
+                        <button class="action-icon missing queue-action action-missing" type="button" disabled title="Called by <?= htmlspecialchars($callerName) ?>">
+                            <i class="fas fa-user-slash"></i>
+                            <span class="action-label">Missing</span>
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -643,6 +716,17 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                   <?php  for ($i = 0; $i < 6; $i++): ?>
                         <div class="col-md-4 mb-3">
                             <div class="stats-card">
+<?php if (
+    isset($nextRows[$i]) &&
+    !empty($nextRows[$i]['priority_order']) &&
+    $nextRows[$i]['priority_order'] > 0
+): ?>
+
+<div class="priority-ribbon">
+    RETURNED
+</div>
+
+<?php endif; ?>
                                 <small>UPCOMING</small>
                                 <div class="stats-number-queue" style="color:#0ea5ff; font-size: 35px; font-weight: bold;">
                                     <?= isset($nextRows[$i])
@@ -761,6 +845,24 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                     </div>
 
                 </div>
+
+                <div class="modal fade" id="changeReceptionModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Change Reception</h5>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to change reception? This will reset the current reception session.</p>
+                                <p class="mb-0"><strong>Reception:</strong> <?= htmlspecialchars($_SESSION['reception_name'] ?? 'N/A') ?></p>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-danger" id="confirmChangeReceptionBtn" type="button">Confirm Change</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Statistics -->
 
                 <div class="row mb-1">
@@ -783,7 +885,8 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                     <div class="col-md-3">
 
-                        <div class="stats-card">
+                        <div class="stats-card clickable"
+     onclick="showQueueCompletedHistory('done')">
 
                             <small>COMPLETED</small>
 
@@ -801,15 +904,16 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
                     <div class="col-md-3" >
 
-                        <div class="stats-card">
+                        <div class="stats-card clickable"
+     onclick="showQueueMissingHistory('cancelled')">
 
-                            <small>CANCELLED</small>
+                            <small>MISSING/SKIP</small>
 
                             <div class="stats-number" style="color:red">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
                                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-                                </svg>&nbsp;<?= $doneCount ?>
+                                </svg>&nbsp;<?= $cancelledCount ?>
                                 
 
                             </div>
@@ -846,8 +950,92 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
                 
 
                 
-               
+               <div class="modal fade"
+     id="queueHistoryModal"
+     tabindex="-1">
 
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 id="queueHistoryTitle"></h5>
+
+                <button class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div id="queueHistoryContent">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="modal fade" id="returnQueueModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Patient Returned
+                </h5>
+
+                <button
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p>
+                    Has <strong>Patient with Queue 
+                    <span id="returnQueueNumber"></span></strong>
+                    has returned.
+                </p>
+
+                <p class="text-muted mb-0">
+                    Move this patient to the
+                    <strong>Priority Queue</strong>?
+                </p>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+                    No
+                </button>
+
+                <button
+                    class="btn btn-success"
+                    id="confirmReturnQueueBtn">
+                    Return Patient
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
                 <div
                     class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -880,6 +1068,8 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
 
 
 </div>
+
+
                 <div class="modal fade" id="missingModal" tabindex="-1">
 
     <div class="modal-dialog modal-dialog-centered">
@@ -937,7 +1127,10 @@ onclick="announceCurrentQueue()">  <?= $currentQueueNumber ?> -->
         </div>
 
     </div>
-     
+
+
+
+
 </body>
 
 </html>

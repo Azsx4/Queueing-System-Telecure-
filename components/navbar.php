@@ -49,7 +49,8 @@ Reception
 
 <a style="color:white;"
 class="nav-link"
-href="history.php">
+href="history.php"
+disabled>
 History
 </a>
 
@@ -59,7 +60,8 @@ History
 
 <a style="color:white;"
 class="nav-link"
-href="dashboard.php">
+href="dashboard.php"
+disabled>
 Dashboard
 </a>
 

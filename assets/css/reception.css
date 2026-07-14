@@ -620,3 +620,45 @@
 
   padding: 80px 20px;
 }
+
+.stats-card.clickable {
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.stats-card.clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+.missing-row {
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.missing-row:hover {
+  background: #eef7ff;
+}
+
+.priority-ribbon {
+  position: absolute;
+  top: 12px;
+  right: -32px;
+
+  width: 120px;
+  text-align: center;
+
+  background: #0ea5ff;
+  color: #fff;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+
+  transform: rotate(45deg);
+
+  padding: 4px 0;
+
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+}

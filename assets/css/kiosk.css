@@ -1,72 +1,298 @@
 .kiosk-container {
+  max-width: 1000px;
+  margin: auto;
+}
 
-    max-width: 1000px;
-    margin: auto;
+/* Ensure positioned children (history button) can be placed relative to page content */
+.main-content {
+  position: relative;
+}
+
+.history-table-wrap {
+  margin-top: 1rem;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.history-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  color: var(--text);
+}
+
+.history-table thead {
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.history-table th {
+  color: #000;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.history-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: middle;
+}
+
+.history-table tbody tr {
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.history-table tbody tr:hover {
+  background: rgba(5, 155, 220, 0.08);
+}
+
+.history-table tbody tr:hover td {
+  color: #3db1e2;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-done {
+  background: rgba(40, 167, 69, 0.12);
+  color: #28a745;
+}
+
+.status-called {
+  background: rgba(13, 110, 253, 0.12);
+  color: #0d6efd;
+}
+
+.status-pending {
+  background: rgba(255, 193, 7, 0.14);
+  color: #ffc107;
+}
+
+.status-missing {
+  background: rgba(220, 53, 69, 0.12);
+  color: #dc3545;
+}
+
+.status-other {
+  background: rgba(108, 117, 125, 0.12);
+  color: #6c757d;
 }
 
 .kiosk-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 25px;
 
-    border: 1px solid var(--border);
-    background: var(--card);
-    border-radius: 25px;
+  padding: 40px;
 
-    padding: 40px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 
-    box-shadow:
-    0 10px 25px rgba(0,0,0,.08);
-
-    text-align: center;
+  text-align: center;
 }
 
 .kiosk-icon {
+  width: 140px;
+  height: 140px;
 
-    width: 140px;
-    height: 140px;
+  margin: auto;
 
-    margin: auto;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: 4px solid var(--primary);
 
-    background: linear-gradient(
-        135deg,
-        var(--primary),
-        var(--secondary)
-    );
-    border: 4px solid var(--primary);
+  border-radius: 50%;
 
-    border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  color: white;
 
-    color: white;
+  font-size: 60px;
 
-    font-size: 60px;
-
-    margin-top: 20px;
-    margin-bottom: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .queue-display {
+  font-size: 90px;
 
-    font-size: 90px;
+  font-weight: bold;
 
-    font-weight: bold;
-
-    color: var(--primary);
+  color: var(--primary);
 }
 
 .info-box {
+  margin-top: 20px;
 
-    margin-top: 20px;
+  padding: 15px;
 
-    padding: 15px;
+  background: rgba(0, 0, 0, 0.03);
 
-    background: rgba(0,0,0,.03);
-
-    border-radius: 15px;
+  border-radius: 15px;
 }
 
 #welcome-text {
+  color: white;
+}
 
-    color: white;
+.queue-actions {
+  margin-top: 20px;
+
+  display: flex;
+
+  gap: 10px;
+}
+
+.queue-actions .action-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.queue-actions .action-icon:hover {
+  background: rgba(14, 165, 255, 0.12);
+  border-color: #0ea5ff;
+  transform: translateY(-1px);
+}
+
+.queue-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  justify-content: flex-end;
+
+  color: #fff;
+}
+
+.action-icon {
+  width: 44px;
+
+  height: 44px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  border: none;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  position: relative;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.action-icon:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.action-icon.recall {
+  background: #0d6efd;
+}
+
+.action-icon.done {
+  background: #3e4140;
+}
+
+.action-icon.done:hover {
+  background: #198754;
+}
+
+.action-icon.missing {
+  background: #cf2717;
+
+  color: #000;
+}
+
+.action-icon.history {
+  background: #3e4140;
+
+  color: #fff;
+}
+
+/* Position history action at top-right of .main-content */
+.action-icon.history {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 40;
+}
+
+.queue-badge {
+  background: #202d27;
+  color: #198754;
+  border: 1px solid #198754;
+}
+
+.action-icon .action-label {
+  position: absolute;
+
+  bottom: -2.25rem;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  background: rgba(0, 0, 0, 0.85);
+
+  color: #fff;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+
+  white-space: nowrap;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition: opacity 0.16s ease;
+}
+
+.action-icon:hover .action-label {
+  opacity: 1;
+
+  visibility: visible;
 }

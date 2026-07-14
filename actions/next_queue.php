@@ -1,5 +1,6 @@
 <?php
 
+session_start();
 include "../database/config.php";
 
 $today = date("Y-m-d");
@@ -23,12 +24,19 @@ if($q->num_rows==0)
 
 $row = $q->fetch_assoc();
 
-$conn->query("
-UPDATE queues
-SET
-status='called',
-called_at=NOW()
-WHERE id=".$row['id']);
+// set called_by and reception_name if available in session
+$reception = $_SESSION['reception_name'] ?? 'Unknown';
+$reception_id = isset($_SESSION['reception_id']) ? (int)$_SESSION['reception_id'] : null;
+
+if ($reception_id) {
+    $stmt = $conn->prepare("UPDATE queues SET status='called', called_at=NOW(), reception_name=?, called_by=? WHERE id=?");
+    if ($stmt) {
+        $stmt->bind_param('sii', $reception, $reception_id, $row['id']);
+        $stmt->execute();
+    }
+} else {
+    $conn->query("UPDATE queues SET status='called', called_at=NOW() WHERE id=".$row['id']);
+}
 
 echo json_encode([
     "success"=>true,

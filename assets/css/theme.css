@@ -1,251 +1,250 @@
 :root {
+  /* Default Theme */
 
-    /* Default Theme */
+  --primary: #059bdc;
+  --secondary: #3db1e2;
+  --dark: #252525;
 
-    --primary: #059BDC;
-    --secondary: #3DB1E2;
-    --dark: #252525;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
-    --success: #22C55E;
-    --warning: #F59E0B;
-    --danger: #EF4444;
-
-    --bg: #404040;
-    --card: #FFFFFF;
-    --text: #059BDC;
-    --border: #3DB1E2;
-    --modal-color: #3DB1E2;
-        h4, #queue-title, a, #welcome-text, .queue-number, .queue-display, .info-box, .ticket-card, .label,
-        .btn-primary, .btn-danger {
-        color: var(--text);
-    }
+  --bg: #404040;
+  --card: #ffffff;
+  --text: #059bdc;
+  --border: #3db1e2;
+  --modal-color: #3db1e2;
+  h4,
+  #queue-title,
+  a,
+  #welcome-text,
+  .queue-number,
+  .queue-display,
+  .info-box,
+  .ticket-card,
+  .label,
+  .btn-primary,
+  .btn-danger {
+    color: var(--text);
+  }
 }
 
 /* Light Mode */
 
 [data-theme="light"] {
-
-    --bg: #FFFFFF;
-    --card: #F8FAFC;
-    --text: #121212;
-    --border: #E2E8F0;
-    h4, a, form{
-        color: var(--text);
-    }
-    #prt-btn {
-        background: var(--bg);
-        border: 1px solid #121212;
-        color: var(--text);
-    }
-    #prt-btn:hover {
-        background:#f1f1f1;
-    }
-    .hero-label, .hero-number {
-        color: var(--text);
-    }
-    .hero-serving{
-        background: var(--card);
-        color: white;
-    }
-    .modal-content, .modal-header{
-        background-color: red;
-    }
-
+  --bg: #ffffff;
+  --card: #f8fafc;
+  --text: #121212;
+  --border: #e2e8f0;
+  h4,
+  a,
+  form {
+    color: var(--text);
+  }
+  #prt-btn {
+    background: var(--bg);
+    border: 1px solid #121212;
+    color: var(--text);
+  }
+  #prt-btn:hover {
+    background: #f1f1f1;
+  }
+  .hero-label,
+  .hero-number {
+    color: var(--text);
+  }
+  .hero-serving {
+    background: var(--card);
+    color: white;
+  }
+  .modal-content,
+  .modal-header {
+  }
 }
 
 /* Dark Mode */
 
 [data-theme="dark"] {
-
-    --bg: #121212;
-    --card: #181818;
-    --text: #FFFFFF;
-    --border: #404040;
-    small, a, #welcome-text, .queue-number, .queue-display, .info-box, .ticket-card, .label, .btn-primary, .btn-danger {
-        color: var(--text);
-    }    
-    |a:var(--border) {
-        color: var(--text);
-    }
-    body{
-        background: var(--bg);
-        color: var(--text);
-    }
-    #prt-btn {
-        background:#282828;
-        border: 1px solid #282828; 
-        color:#3DB1E2
-    }
-    #prt-icon {
-        color: var(--text);
-    }
-    #prt-btn:hover {
-        background:var(--border);
-    }
-    .menu a:hover {
-
-    background: var(--border);
-    color: white;
-    }   
-    .hero-label, .hero-number{
-        color: var(--text);
-    }
-    .hero-serving{
-        background: var(--card);
-        color: white;
-    }
-    .stats-card{
-        background: var(--card);
-        color: var(--text);
-        border: 1px solid var(--border);
-    }
-    #reception-name{
-    color: var(--accent-color);
-    font-weight:700;
-    }
-    #reception-status.active{
-    color:#28a745;
-    }
-    #reception-status.away{
-        color:#ffc107;
-    }
-    }
-    #active-count{
-    color:var(--accent-color);
-    font-weight:700;
-    }
-
-
-
-body {
-
+  --bg: #121212;
+  --card: #181818;
+  --text: #ffffff;
+  --border: #404040;
+  small,
+  a,
+  #welcome-text,
+  .queue-number,
+  .queue-display,
+  .info-box,
+  .ticket-card,
+  .label,
+  .btn-primary,
+  .btn-danger {
+    color: var(--text);
+  }
+  |a:var(--border) {
+    color: var(--text);
+  }
+  body {
     background: var(--bg);
     color: var(--text);
+  }
+  #prt-btn {
+    background: #282828;
+    border: 1px solid #282828;
+    color: #3db1e2;
+  }
+  #prt-icon {
+    color: var(--text);
+  }
+  #prt-btn:hover {
+    background: var(--border);
+  }
+  .menu a:hover {
+    background: var(--border);
+    color: white;
+  }
+  .hero-label,
+  .hero-number {
+    color: var(--text);
+  }
+  .hero-serving {
+    background: var(--card);
+    color: white;
+  }
+  .stats-card {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  #reception-name {
+    color: var(--accent-color);
+    font-weight: 700;
+  }
+  #reception-status.active {
+    color: #28a745;
+  }
+  #reception-status.away {
+    color: #ffc107;
+  }
+}
+#active-count {
+  color: var(--accent-color);
+  font-weight: 700;
+}
 
-    transition: .3s;
+body {
+  background: var(--bg);
+  color: var(--text);
+
+  transition: 0.3s;
 }
 
 .card-v3 {
-
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
 }
 
 .sidebar {
+  position: fixed;
 
-    position: fixed;
+  left: 0;
+  top: 0;
 
-    left: 0;
-    top: 0;
+  width: 260px;
+  height: 100vh;
 
-    width: 260px;
-    height: 100vh;
+  background: var(--card);
 
-    background: var(--card);
+  border-right: 1px solid var(--border);
 
-    border-right: 1px solid var(--border);
+  padding: 20px;
 
-    padding: 20px;
-
-    z-index: 1000;
+  z-index: 1000;
 }
 
 .sidebar {
-
-    transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .sidebar.collapsed {
-
-    width: 80px;
+  width: 80px;
 }
 
 .sidebar.collapsed .menu-text {
-
-    display: none;
+  display: none;
 }
 
 .sidebar.collapsed .logo-text {
-
-    display: none;
+  display: none;
 }
 
 .sidebar.collapsed .menu a {
-
-    text-align: center;
+  text-align: center;
 }
 
 .sidebar.collapsed .menu i {
-
-    font-size: 22px;
+  font-size: 22px;
 }
 
 .logo {
-
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .menu a {
+  display: block;
 
-    display: block;
+  text-decoration: none;
 
-    text-decoration: none;
+  color: var(--text);
 
-    color: var(--text);
+  padding: 12px;
 
-    padding: 12px;
+  border-radius: 12px;
 
-    border-radius: 12px;
+  margin-bottom: 8px;
 
-    margin-bottom: 8px;
-
-    transition: .2s;
+  transition: 0.2s;
 }
 
 .menu a:hover {
-
-    background: var(--primary);
-    color: white;
+  background: var(--primary);
+  color: white;
 }
 
 .top-header {
+  height: 70px;
 
-    height: 70px;
+  background: var(--card);
 
-    background: var(--card);
+  border-bottom: 1px solid var(--border);
 
-    border-bottom: 1px solid var(--border);
+  display: flex;
 
-    display: flex;
+  justify-content: space-between;
 
-    justify-content: space-between;
+  align-items: center;
 
-    align-items: center;
+  padding: 0 25px;
 
-    padding: 0 25px;
+  margin-left: 260px;
 
-    margin-left: 260px;
-
-    transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .top-header.expanded {
-
-    margin-left: 80px;
+  margin-left: 80px;
 }
 
 .main-content {
+  margin-left: 260px;
 
-    margin-left: 260px;
+  padding: 25px;
 
-    padding: 25px;
-
-    transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .main-content.expanded {
-
-    margin-left: 80px;
+  margin-left: 80px;
 }
