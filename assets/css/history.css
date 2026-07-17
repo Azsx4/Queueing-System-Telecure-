@@ -3,8 +3,8 @@
 ========================================== */
 
 .main-content {
-  background: #121212;
-  color: #e5e7eb;
+  background: var(--bg);
+  color: var(--text);
   padding: 25px;
 }
 
@@ -23,11 +23,11 @@
 
 .page-header h2 {
   font-weight: 700;
-  color: #fff;
+  color: var(--text-strong);
 }
 
 .page-header p {
-  color: #9ca3af;
+  color: var(--muted);
 }
 
 /* ==========================================
@@ -35,81 +35,59 @@
 ========================================== */
 
 .summary-card {
-  background: #161616;
-
-  border: 1px solid #242424;
-
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 18px;
-
   padding: 22px;
-
   transition: 0.25s;
-
   position: relative;
-
   overflow: hidden;
-
   height: 100%;
 }
 
 .summary-card:hover {
   transform: translateY(-3px);
-
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 30px var(--shadow);
 }
 
 .summary-card::before {
   content: "";
-
   position: absolute;
-
   left: 0;
-
   top: 0;
-
   width: 5px;
-
   height: 100%;
-
-  background: #0ea5ff;
+  background: var(--primary);
 }
 
 .summary-card small {
   display: block;
-
-  color: #9ca3af;
-
+  color: var(--muted);
   margin-bottom: 10px;
-
   font-size: 0.82rem;
 }
 
 .summary-card h2 {
   margin: 0;
-
   font-size: 2rem;
-
   font-weight: 700;
-
-  color: #fff;
+  color: var(--text-strong);
 }
 
-/* Left Border Colors */
-
 .summary-card.success::before {
-  background: #22c55e;
+  background: var(--success);
 }
 
 .summary-card.warning::before {
-  background: #f59e0b;
+  background: var(--warning);
 }
 
 .summary-card.danger::before {
-  background: #ef4444;
+  background: var(--danger);
 }
 
 .summary-card.info::before {
-  background: #0ea5ff;
+  background: var(--primary);
 }
 
 .summary-card.secondary::before {
@@ -121,10 +99,8 @@
 ========================================== */
 
 .filter-card {
-  background: #161616;
-
-  border: 1px solid #242424;
-
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 18px;
 }
 
@@ -133,35 +109,28 @@
 }
 
 .filter-card label {
-  color: #cbd5e1;
-
+  color: var(--text);
   font-size: 0.85rem;
-
   margin-bottom: 6px;
 }
 
 .form-control,
 .form-select {
-  background: #1f1f1f;
-
-  border: 1px solid #323232;
-
-  color: #fff;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
 }
 
 .form-control:focus,
 .form-select:focus {
-  background: #1f1f1f;
-
-  color: #fff;
-
-  border-color: #0ea5ff;
-
+  background: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--primary);
   box-shadow: 0 0 0 0.15rem rgba(14, 165, 255, 0.15);
 }
 
 .form-control::placeholder {
-  color: #7b7b7b;
+  color: var(--muted);
 }
 
 /* ==========================================
@@ -169,47 +138,37 @@
 ========================================== */
 
 .table-card {
-  background: #161616;
-
+  background: var(--card);
   border-radius: 18px;
-
-  border: 1px solid #242424;
-
+  border: 1px solid var(--border);
   overflow: hidden;
 }
 
 .table {
   margin: 0;
-
-  color: #fff;
+  color: var(--text);
 }
 
 .table thead {
-  background: #1c1c1c;
+  background: var(--table-head-bg);
 }
 
 .table thead th {
   border: none;
-
   padding: 16px;
-
-  color: #cbd5e1;
-
+  color: var(--muted);
   font-weight: 600;
-
   white-space: nowrap;
 }
 
 .table tbody td {
   padding: 16px;
-
-  border-color: #242424;
-
+  border-color: var(--border);
   vertical-align: middle;
 }
 
 .table-hover tbody tr:hover {
-  background: #1f1f1f;
+  background: var(--table-row-hover);
 }
 
 /* ==========================================
@@ -218,47 +177,38 @@
 
 .badge-status {
   padding: 7px 12px;
-
   border-radius: 25px;
-
   font-size: 0.75rem;
-
   font-weight: 600;
 }
 
 .status-completed {
-  background: #143d25;
-
-  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--success);
 }
 
 .status-waiting {
-  background: #102c46;
-
-  color: #38bdf8;
+  background: rgba(14, 165, 255, 0.12);
+  color: var(--primary);
 }
 
 .status-called {
-  background: #352a55;
-
+  background: rgba(139, 92, 246, 0.14);
   color: #a78bfa;
 }
 
 .status-missing {
-  background: #4b3212;
-
-  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--warning);
 }
 
 .status-cancelled {
-  background: #4b1616;
-
-  color: #f87171;
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--danger);
 }
 
 .status-returned {
-  background: #16314f;
-
+  background: rgba(59, 130, 246, 0.14);
   color: #60a5fa;
 }
 
@@ -268,23 +218,16 @@
 
 .btn-action {
   width: 36px;
-
   height: 36px;
-
   border-radius: 10px;
-
   border: none;
-
-  background: #202020;
-
-  color: #fff;
-
+  background: var(--card);
+  color: var(--text);
   transition: 0.25s;
 }
 
 .btn-action:hover {
-  background: #0ea5ff;
-
+  background: var(--primary);
   color: #fff;
 }
 
@@ -294,38 +237,30 @@
 
 .pagination-wrapper {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   flex-wrap: wrap;
-
   gap: 15px;
 }
 
 #paginationInfo {
-  color: #9ca3af;
+  color: var(--muted);
 }
 
 .pagination .page-link {
-  background: #161616;
-
-  border: 1px solid #2a2a2a;
-
-  color: #cbd5e1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .pagination .page-link:hover {
-  background: #0ea5ff;
-
+  background: var(--primary);
   color: #fff;
 }
 
 .pagination .active .page-link {
-  background: #0ea5ff;
-
-  border-color: #0ea5ff;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 /* ==========================================
@@ -333,23 +268,18 @@
 ========================================== */
 
 .modal-content {
-  background: #161616;
-
-  color: #fff;
-
-  border: 1px solid #2b2b2b;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
-.modal-header {
-  border-bottom: 1px solid #2a2a2a;
-}
-
+.modal-header,
 .modal-footer {
-  border-top: 1px solid #2a2a2a;
+  border-color: var(--border);
 }
 
 .btn-close {
-  filter: invert(1);
+  filter: invert(0.85);
 }
 
 /* ==========================================
@@ -357,18 +287,16 @@
 ========================================== */
 
 .dropdown-menu {
-  background: #1b1b1b;
-
-  border: 1px solid #2b2b2b;
+  background: var(--card);
+  border: 1px solid var(--border);
 }
 
 .dropdown-item {
-  color: #ddd;
+  color: var(--text);
 }
 
 .dropdown-item:hover {
-  background: #0ea5ff;
-
+  background: var(--primary);
   color: #fff;
 }
 
@@ -378,9 +306,7 @@
 
 .loading-row {
   height: 250px;
-
-  color: #888;
-
+  color: var(--muted);
   font-size: 15px;
 }
 
@@ -391,13 +317,11 @@
 @media (max-width: 992px) {
   .page-header {
     flex-direction: column;
-
     align-items: flex-start;
   }
 
   .pagination-wrapper {
     flex-direction: column;
-
     align-items: flex-start;
   }
 }

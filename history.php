@@ -50,7 +50,6 @@ include 'database/config.php';
         <div>
 
             <h2 class="mb-1">
-                <i class="fas fa-folder-open text-primary"></i>
                 Records & Reports Center
             </h2>
 
@@ -393,7 +392,7 @@ include 'database/config.php';
 
         <div class="table-responsive">
 
-            <table class="table table-hover align-middle mb-0 table-dark">
+            <table class="table table-hover align-middle mb-0">
 
                 <thead>
 

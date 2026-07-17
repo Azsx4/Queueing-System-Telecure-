@@ -1,53 +1,39 @@
-body{
-background:#edf4fa;
-font-family:Segoe UI;
+body {
+  background: var(--bg, #edf4fa);
+  color: var(--text, #111827);
+  font-family: Segoe UI;
 }
 
-.ticket-card{
-
-background:white;
-max-width:450px;
-
-margin:30px auto;
-
-padding:30px;
-
-border-radius:20px;
-
-box-shadow:
-0 10px 25px rgba(0,0,0,.1);
-
+.ticket-card {
+  background: var(--card, #ffffff);
+  color: var(--text, #111827);
+  max-width: 450px;
+  margin: 30px auto;
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-.label{
-
-letter-spacing:2px;
-font-size:14px;
-color:#777;
-
+.label {
+  letter-spacing: 2px;
+  font-size: 14px;
+  color: var(--muted, #777);
 }
 
-.queue-number{
-
-font-size:110px;
-font-weight:700;
-line-height:1;
-
-color:#00122e;
-
+.queue-number {
+  font-size: 110px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-strong, #00122e);
 }
 
-
-
-
-
-@page{
-size:58mm auto;
-margin:0;
+@page {
+  size: 58mm auto;
+  margin: 0;
 }
 
-@page{
-size:80mm auto;
-margin:0;
+@page {
+  size: 80mm auto;
+  margin: 0;
 }
-

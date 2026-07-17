@@ -10,7 +10,9 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <link rel="stylesheet" href="assets/css/theme.css">
     <link rel="stylesheet" href="assets/css/monitor.css">
+    <script src="assets/js/theme.js"></script>
 
 </head>
 
@@ -24,9 +26,9 @@
 
         <div class="clinic-name">
 
-            <h1>TELECURE CLINIC</h1>
+            <h1>TELECURE</h1>
 
-            <span>QUEUE MONITOR DISPLAY</span>
+            <span>MEDICAL AND DIAGNOSTIC CENTER</span>
 
         </div>
 

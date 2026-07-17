@@ -62,7 +62,6 @@ while($row = $result->fetch_assoc()){
     echo "<td>".$row['reception_name']."</td>";
 
 
-
     echo "</tr>";
 }
 

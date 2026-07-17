@@ -1,32 +1,21 @@
 .stats-card {
   background: var(--card);
-
   border-radius: 20px;
-
   padding: 25px;
-
   text-align: center;
-
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-
+  box-shadow: var(--shadow);
   height: 100%;
-
   position: relative;
-
   overflow: hidden;
 }
 
 .stats-card::before {
   content: "";
-
   position: absolute;
-
   top: 0;
   left: 0;
-
   width: 100%;
   height: 5px;
-
   background: var(--primary);
 }
 
@@ -38,20 +27,15 @@
 .stats-number-queue {
   font-size: 35px;
   font-weight: bold;
-  color: #0ea5ff;
+  color: var(--primary);
 }
 
 .queue-card {
   background: var(--card);
-
   border-radius: 20px;
-
   padding: 20px;
-
   margin-bottom: 15px;
-
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-
+  box-shadow: var(--shadow);
   transition: 0.2s;
 }
 
@@ -61,51 +45,35 @@
 
 .queue-number {
   font-size: 52px;
-
   font-weight: 700;
-
-  font-weight: bold;
-
   color: var(--primary);
 }
 
 .action-panel {
   background: var(--card);
-
   padding: 20px;
-
   border-radius: 20px;
-
   margin-bottom: 20px;
 }
 
 .hero-serving {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
-
   color: white;
-
   border-radius: 25px;
-
   padding: 40px;
-
   text-align: center;
-
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow);
 }
 
 .hero-label {
   font-size: 18px;
-
   letter-spacing: 2px;
-
   opacity: 0.9;
 }
 
 .hero-number {
   font-size: 90px;
-
   font-weight: bold;
-
   line-height: 1;
 }
 
@@ -125,7 +93,7 @@
 
 .status-tab {
   border: none;
-  background: #e5e7eb;
+  background: var(--input-border);
   padding: 8px 15px;
   border-radius: 8px;
   cursor: pointer;
@@ -138,116 +106,53 @@
 
 .queue-grid {
   display: grid;
-
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-
   gap: 10px;
 }
 
 .queue-mini-card {
   background: var(--card);
-
   border-radius: 15px;
-
   padding: 15px;
-
   text-align: center;
-
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-
+  box-shadow: var(--shadow);
   min-height: 210px;
-
   display: flex;
-
   flex-direction: column;
-
   justify-content: space-between;
 }
 
 .queue-status {
   color: white;
-
   font-size: 11px;
-
   font-weight: bold;
-
   padding: 4px;
-
   border-radius: 6px;
-
   margin-bottom: 10px;
 }
 
 .queue-mini-number {
   font-size: 50px;
-
   font-weight: 700;
-
   color: var(--primary);
 }
 
 .queue-time {
   font-size: 12px;
-
-  color: #666;
-
+  color: var(--muted);
   margin-bottom: 15px;
 }
 
 .queue-actions {
   display: flex;
-
   gap: 5px;
-
   justify-content: center;
-
   flex-wrap: wrap;
 }
 
 .queue-actions .btn {
   font-size: 12px;
-
   padding: 4px 8px;
-}
-
-.queue-toolbar {
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  margin-bottom: 20px;
-
-  gap: 20px;
-}
-
-.status-tabs {
-  display: flex;
-
-  gap: 8px;
-
-  flex-wrap: wrap;
-}
-
-.status-tab {
-  border: none;
-
-  background: var(--border);
-
-  padding: 8px 14px;
-
-  border-radius: 8px;
-
-  cursor: pointer;
-
-  font-size: 14px;
-}
-
-.status-tab.active {
-  background: var(--text);
-
-  color: var(--card);
 }
 
 .search-box {
@@ -261,11 +166,8 @@
 
 .pagination-wrapper {
   display: flex;
-
   justify-content: center;
-
   gap: 10px;
-
   margin-top: 25px;
 }
 
@@ -288,7 +190,7 @@
 }
 
 #cancel-btn {
-  background: #ef4444;
+  background: var(--danger);
 }
 
 #cancel-btn:hover {
@@ -296,13 +198,15 @@
 }
 
 .modal-title {
-  color: var(--bg);
+  color: var(--text-strong);
 }
 
 .modal-header,
 .modal-body,
 .modal-footer {
-  background: var(--text);
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .now-serving-card {
@@ -329,7 +233,7 @@
 }
 
 #reception-name {
-  color: #0ea5ff;
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -344,7 +248,7 @@
 }
 
 #active-count {
-  color: #0ea5ff;
+  color: var(--primary);
   font-weight: 700;
   font-size: 1.1rem;
 }
@@ -363,9 +267,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #0ea5ff;
-  background: #121212;
-  border: 1px solid #0ea5ff;
+  color: var(--primary);
+  background: var(--card);
+  border: 1px solid var(--primary);
   border-radius: 50%;
   font-size: 1rem;
   position: relative;
@@ -389,7 +293,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.85);
-  color: #0ea5ff;
+  color: var(--primary);
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -417,9 +321,9 @@
   height: 42px;
   padding: 0 0.85rem;
   font-size: 0.95rem;
-  color: #0ea5ff;
-  background: #121212;
-  border: 1px solid #0ea5ff;
+  color: var(--primary);
+  background: var(--card);
+  border: 1px solid var(--primary);
   border-radius: 0.45rem;
   cursor: pointer;
   outline: none;
@@ -429,12 +333,12 @@
 }
 
 .voice-select:focus {
-  border-color: #0ea5ff;
+  border-color: var(--primary);
   box-shadow: 0 0 0 0.2rem rgba(14, 165, 255, 0.18);
 }
 
 .voice-select option[value=""] {
-  color: #6c757d;
+  color: var(--muted);
 }
 
 #voice-settings {
@@ -447,8 +351,8 @@
 }
 
 .main-content {
-  background: #121212;
-  color: #e5e7eb;
+  background: var(--bg);
+  color: var(--text);
   padding: 1.5rem;
 }
 
@@ -457,26 +361,26 @@
 .stats-card,
 .queue-mini-card,
 .modal-content {
-  background: #161616;
-  color: #e5e7eb;
-  border: 1px solid #222;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .hero-serving {
-  background: linear-gradient(135deg, #091021, #12121d);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #f8fafc;
 }
 
 .queue-card-header {
-  background: #161616;
-  border-bottom: 1px solid #2a2a2a;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
   padding: 12px 16px;
   border-radius: 16px 16px 0 0;
 }
 
 .queue-info {
   line-height: 2;
-  color: #cbd5e1;
+  color: var(--text);
 }
 
 .queue-badge {
@@ -493,7 +397,7 @@
 
 #active-queue-counter span {
   font-weight: 700;
-  color: #0ea5ff;
+  color: var(--primary);
 }
 
 .btn-descp {
@@ -502,101 +406,72 @@
   margin-top: 20px;
 }
 
-/* ===========================
-   Active Queue Cards
-=========================== */
-
 #activeQueueContainer {
   display: flex;
-
   flex-direction: column;
-  background: #121212;
+  background: var(--bg);
   gap: 15px;
 }
 
 .active-queue-card {
-  background: #121212;
-
+  background: var(--card);
   border-radius: 18px;
-
   padding: 20px;
-
   margin-bottom: 15px;
-
-  border-left: 6px solid #0ea5ff;
-
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-}
-
-.active-queue-card {
+  border-left: 6px solid var(--primary);
+  box-shadow: var(--shadow);
   cursor: pointer;
 }
 
 .active-queue-card:hover {
   transform: translateY(-2px);
-
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 .queue-card-header {
-  background: #1a1a1a;
-  border-bottom: 1px solid #2a2a2a;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 12px;
   margin-bottom: 15px;
 }
 
 .queue-title {
-  color: #e5e7eb;
+  color: var(--text-strong);
   font-size: 20px;
   font-weight: 600;
 }
 
 .queue-no {
-  color: #0ea5ff;
-
+  color: var(--primary);
   font-size: 30px;
-
   margin-left: 8px;
 }
 
 .queue-badge {
   background: #198754;
-
   color: white;
-
   padding: 5px 12px;
-
   border-radius: 20px;
-
   font-size: 12px;
-
   font-weight: bold;
 }
 
 .queue-card-body {
-  color: #e5e7eb;
-}
-
-.queue-info {
-  line-height: 2;
-
-  color: #cbd5e1;
+  color: var(--text);
 }
 
 .queue-actions {
   margin-top: 20px;
-
   display: flex;
-
   gap: 10px;
 }
 
 .queue-actions .action-icon {
   width: 42px;
   height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
-  color: #e5e7eb;
+  color: var(--text);
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
@@ -609,15 +484,13 @@
 
 .queue-actions .action-icon:hover {
   background: rgba(14, 165, 255, 0.12);
-  border-color: #0ea5ff;
+  border-color: var(--primary);
   transform: translateY(-1px);
 }
 
 .empty-active {
   text-align: center;
-
-  color: gray;
-
+  color: var(--muted);
   padding: 80px 20px;
 }
 
@@ -637,28 +510,22 @@
 }
 
 .missing-row:hover {
-  background: #eef7ff;
+  background: rgba(14, 165, 255, 0.08);
 }
 
 .priority-ribbon {
   position: absolute;
   top: 12px;
   right: -32px;
-
   width: 120px;
   text-align: center;
-
-  background: #0ea5ff;
+  background: var(--primary);
   color: #fff;
-
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
-
   transform: rotate(45deg);
-
   padding: 4px 0;
-
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
   z-index: 5;
 }

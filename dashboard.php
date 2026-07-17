@@ -38,18 +38,18 @@ include 'database/config.php';
 ====================================================== */
 
 :root {
-  --dashboard-primary: #0ea5ff;
-  --dashboard-success: #16a34a;
-  --dashboard-warning: #f59e0b;
-  --dashboard-danger: #dc2626;
+  --dashboard-primary: var(--primary, #0ea5ff);
+  --dashboard-success: var(--success, #16a34a);
+  --dashboard-warning: var(--warning, #f59e0b);
+  --dashboard-danger: var(--danger, #dc2626);
   --dashboard-info: #2563eb;
 
-  --dashboard-card: #161616;
-  --dashboard-bg: #121212;
-  --dashboard-border: #262626;
+  --dashboard-card: var(--card, #161616);
+  --dashboard-bg: var(--bg, #121212);
+  --dashboard-border: var(--border, #262626);
 
-  --dashboard-text: #f5f5f5;
-  --dashboard-text-muted: #9ca3af;
+  --dashboard-text: var(--text, #f5f5f5);
+  --dashboard-text-muted: var(--muted, #9ca3af);
 }
 
 /* ======================================================
@@ -175,16 +175,9 @@ include 'database/config.php';
 
   margin-bottom: 10px;
 
-  color: white;
+  color: var(--dashboard-text);
 }
-
-.dashboard-footer {
-  font-size: 13px;
-
-  color: var(--dashboard-text-muted);
-}
-
-/* ======================================================
+/*======================================================
    Dashboard Panels
 ====================================================== */
 
@@ -280,27 +273,27 @@ include 'database/config.php';
 ====================================================== */
 
 .bg-primary {
-  background: #0ea5ff !important;
+  background: var(--dashboard-primary) !important;
 }
 
 .bg-success {
-  background: #16a34a !important;
+  background: var(--dashboard-success) !important;
 }
 
 .bg-warning {
-  background: #f59e0b !important;
+  background: var(--dashboard-warning) !important;
 }
 
 .bg-danger {
-  background: #dc2626 !important;
+  background: var(--dashboard-danger) !important;
 }
 
 .bg-info {
-  background: #2563eb !important;
+  background: var(--dashboard-info) !important;
 }
 
 .bg-secondary {
-  background: #6b7280 !important;
+  background: var(--muted, #6b7280) !important;
 }
 
 /* ======================================================
@@ -1029,7 +1022,7 @@ include 'database/config.php';
 
             <div class="table-responsive">
 
-                <table class="table table-dark table-hover align-middle mb-0" id="receptionPerformanceTable">
+                <table class="table table-hover align-middle mb-0" id="receptionPerformanceTable">
 
                     <thead>
 

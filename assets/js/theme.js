@@ -1,82 +1,44 @@
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+document.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem("theme") || "default";
 
-        const savedTheme =
-        localStorage.getItem("theme") || "default";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  const sidebar = document.getElementById("sidebar");
 
-        document.documentElement.setAttribute(
-            "data-theme",
-            savedTheme
-        );
-        const sidebar =
-    document.getElementById("sidebar");
+  const content = document.querySelector(".main-content");
 
-    const content =
-    document.querySelector(".main-content");
+  const header = document.querySelector(".top-header");
 
-    const header =
-    document.querySelector(".top-header");
+  const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
 
-    const collapsed =
-    localStorage.getItem(
-        "sidebarCollapsed"
-    ) === "true";
+  if (collapsed) {
+    sidebar?.classList.add("collapsed");
 
-if(collapsed)
-{
-    sidebar?.classList.add(
-        "collapsed"
-    );
+    content?.classList.add("expanded");
 
-    content?.classList.add(
-        "expanded"
-    );
+    header?.classList.add("expanded");
+  }
+});
 
-    header?.classList.add(
-        "expanded"
-    );
+function changeTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+
+  localStorage.setItem("theme", theme);
 }
 
-    }
-);
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
 
-function changeTheme(theme)
-{
-    document.documentElement.setAttribute(
-        "data-theme",
-        theme
-    );
+  const content = document.querySelector(".main-content");
 
-    localStorage.setItem(
-        "theme",
-        theme
-    );
+  const header = document.querySelector(".top-header");
+
+  sidebar.classList.toggle("collapsed");
+
+  content.classList.toggle("expanded");
+
+  header.classList.toggle("expanded");
+
+  const collapsed = sidebar.classList.contains("collapsed");
+
+  localStorage.setItem("sidebarCollapsed", collapsed);
 }
-
-function toggleSidebar()
-{
-    const sidebar =
-    document.getElementById("sidebar");
-
-    const content =
-    document.querySelector(".main-content");
-
-    const header =
-    document.querySelector(".top-header");
-
-    sidebar.classList.toggle("collapsed");
-
-    content.classList.toggle("expanded");
-
-    header.classList.toggle("expanded");
-
-    const collapsed =
-    sidebar.classList.contains("collapsed");
-
-    localStorage.setItem(
-        "sidebarCollapsed",
-        collapsed
-    );
-}
-

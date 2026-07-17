@@ -49,7 +49,9 @@ WHERE queue_date='$today'
 
 <!DOCTYPE html>
 <html>
-<head>
+<head>    
+    <meta charset="UTF-8">
+    <title>Generate Queue Number</title>
 
 
 <link rel="stylesheet" href="assets/css/theme.css">
@@ -64,12 +66,15 @@ src="assets/js/theme.js">
 
 </head>
 
+
 <body>
 
 <?php include 'components/sidebar.php'; ?>
 
 <?php include 'components/header.php'; ?>
+
 <div class="main-content">
+
                             <button class="action-icon history queue-action action-history" type="button" title="History" onclick="showQueueCompletedHistory('all')">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                             <span class="action-label">History</span>
